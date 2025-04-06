@@ -27,7 +27,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (pathSegments.length === 1 && pathSegments[0] === 'games') {
     // Create a new game
     const { data: game, error } = await supabase
-      .from('games')
+      .from('gambit_games')
       .insert([
         { 
           name: `${session.user.email}'s game`,
