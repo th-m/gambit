@@ -5,6 +5,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  type LoaderFunction,
 } from "react-router";
 
 import type { Route } from "./+types/root";

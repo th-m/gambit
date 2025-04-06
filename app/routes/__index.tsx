@@ -1,6 +1,7 @@
-import type { Route } from "./+types/home";
+import type { Route } from "./+types/__index";
 import { WavyBackground } from "~/components/waves";
 import { TextHoverEffect } from "~/components/texthover";
+import { Link } from "react-router";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -15,7 +16,7 @@ export function loader({ context }: Route.LoaderArgs) {
 
 export default function Home({ loaderData }: Route.ComponentProps) {
   return (
-    <div className="min-h-screen text-white">
+    <div className="min-h-screen bg-stone-900 text-white">
       {/* Hero Section with Wavy Background */}
       <WavyBackground 
         colors={["#38bdf8", "#818cf8", "#c084fc", "#e879f9", "#22d3ee"]}
@@ -36,24 +37,24 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center gap-6 mt-8">
-            <a 
-              href="/games/create" 
+            <Link 
+              to="/games"
               className="group bg-blue-600/80 hover:bg-blue-500/90 transition-all duration-300 backdrop-blur-sm text-white font-semibold py-4 px-8 rounded-xl shadow-lg text-center text-lg flex items-center justify-center gap-2"
             >
               <span>Create Game</span>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-            </a>
-            <a 
-              href="/games/join" 
+            </Link>
+            <Link 
+              to="/games/join"
               className="group bg-indigo-600/80 hover:bg-indigo-500/90 transition-all duration-300 backdrop-blur-sm text-white font-semibold py-4 px-8 rounded-xl shadow-lg text-center text-lg flex items-center justify-center gap-2"
             >
               <span>Join Game</span>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
-            </a>
+            </Link>
           </div>
         </div>
       </WavyBackground>

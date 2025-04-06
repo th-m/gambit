@@ -1,24 +1,24 @@
 const characters = [
     {
-      team: "Good",
-      type: "Seer",
+      alignment: "Good",
+      role: "Seer",
       description: "Knows most evil players but must hide his identity.",
       sees: [
-        { team: "Evil" },
-        { type: 'Maverick' }
+        { alignment: "Evil" },
+        { role: 'Maverick' }
       ]
     },
     {
-      team: "Good",
-      type: "Protector",
+      alignment: "Good",
+      role: "Protector",
       description: "Sees two candidates—one is the Seer—to protect him.",
       sees: [
-        { type: "Seer" },
+        { role: "Seer" },
       ]
     },
     {
-        team: "Good",
-        type: "Inquisitor",
+        alignment: "Good",
+        role: "Inquisitor",
         description: "Can force one player to publicly reveal their vote on a quest.",
         action: {
           reveal: {
@@ -29,75 +29,75 @@ const characters = [
         }
       },
     {
-      team: "Good",
-      type: "Support",
+      alignment: "Good",
+      role: "Support",
       description: "Regular players with no special abilities."
     },
     {
-      team: "Evil",
-      type: "Executioner",
+      alignment: "Evil",
+      role: "Executioner",
       description: "Wins by correctly identifying the Seer after quests.",
       actions: { assassinate: true }
     },
     {
-      team: "Evil",
-      type: "Deceiver",
+      alignment: "Evil",
+      role: "Deceiver",
       description: "Appears as the Seer to confuse the Protector.",
       mimics: [
-        { type: "Seer" }
+        { role: "Seer" }
       ]
     },
     {
-      team: "Evil",
-      type: "Infiltrator",
+      alignment: "Evil",
+      role: "Infiltrator",
       description: "Hidden from the Seer's view.",
       mimics: [
-        { team: "Good" }
+        { alignment: "Good" }
       ]
     },
     {
-      team: "Evil",
-      type: "Maverick",
+      alignment: "Evil",
+      role: "Maverick",
       description: "Unknown to other evil players.",
       mimics: [
-        { team: "Good" }
+        { alignment: "Good" }
       ]
     },
     {
-      team: "Evil",
-      type: "Underling",
+      alignment: "Evil",
+      role: "Underling",
       description: "Standard evil players without extra abilities.",
       sees: [
-        { team: "Evil" }
+        { alignment: "Evil" }
       ]
     },
     {
-        team: "Good",
-        type: "Double Agent",
+        alignment: "Good",
+        role: "Double Agent",
         description: "Appears as evil to other evil players but is actually good.",
         mimics: [
-          { team: "Evil" }
+          { alignment: "Evil" }
         ]
       }
     ]
-    
+
 const extraCharacters = [
-    // Additional Character Types
+    // Additional Character roles
     {
-      team: "Good",
-      type: "Oracle",
-      description: "Can reveal a hint about a player's alignment or type once per round.",
+      alignment: "Good",
+      role: "Oracle",
+      description: "Can reveal a hint about a player's alignment or role once per round.",
       action: {
         revealHint: {
           target: "any",
-          effect: "If the target is Evil, returns a vague clue about their type.",
+          effect: "If the target is Evil, returns a vague clue about their role.",
           usage: "once per round"
         }
       }
     },
     {
-      team: "Good",
-      type: "Confessor",
+      alignment: "Good",
+      role: "Confessor",
       description: "Can secretly query a player's alignment once per game.",
       action: {
         query: {
@@ -108,8 +108,8 @@ const extraCharacters = [
       }
     },
     {
-      team: "Evil",
-      type: "Witch",
+      alignment: "Evil",
+      role: "Witch",
       description: "Can curse a player, nullifying their action for a round.",
       action: {
         curse: {
@@ -120,20 +120,20 @@ const extraCharacters = [
       }
     },
     {
-      team: "Good",
-      type: "Sage",
-      description: "Gains a temporary hint about a player's type each round.",
+      alignment: "Good",
+      role: "Sage",
+      description: "Gains a temporary hint about a player's role each round.",
       action: {
         foresee: {
           target: "any",
-          effect: "Provides a vague hint about the player's type.",
+          effect: "Provides a vague hint about the player's role.",
           usage: "once per round"
         }
       }
     },
     {
-      team: "Neutral",
-      type: "Renegade",
+      alignment: "Neutral",
+      role: "Renegade",
       description: "Aims to be the last player standing; wins if the game ends in a tie.",
       action: {
         lastStand: {
@@ -144,8 +144,8 @@ const extraCharacters = [
       }
     },
     {
-      team: "Evil",
-      type: "Shadow",
+      alignment: "Evil",
+      role: "Shadow",
       description: "Intercepts investigations, blocking a player's inquiry each round.",
       action: {
         intercept: {
@@ -155,22 +155,22 @@ const extraCharacters = [
         }
       }
     },
-    // New Character Types
+    // New Character roles
     {
-      team: "Good",
-      type: "Mystic",
+      alignment: "Good",
+      role: "Mystic",
       description: "Can sense if there's evil in a group but not who specifically.",
       action: {
         sense: {
           target: "group",
-          effect: "Reveals if a quest team contains at least one evil player.",
+          effect: "Reveals if a quest alignment contains at least one evil player.",
           usage: "once per game"
         }
       }
     },
     {
-      team: "Good",
-      type: "Sentinel",
+      alignment: "Good",
+      role: "Sentinel",
       description: "Can protect one quest from failure, overriding any sabotage attempts.",
       action: {
         protect: {
@@ -182,8 +182,8 @@ const extraCharacters = [
     },
 
     {
-      team: "Good",
-      type: "Historian",
+      alignment: "Good",
+      role: "Historian",
       description: "Knows the results of one future quest in advance.",
       action: {
         foresight: {
@@ -194,8 +194,8 @@ const extraCharacters = [
       }
     },
     {
-      team: "Evil",
-      type: "Puppetmaster",
+      alignment: "Evil",
+      role: "Puppetmaster",
       description: "Can force another player to vote a certain way once per game.",
       action: {
         manipulate: {
@@ -206,8 +206,8 @@ const extraCharacters = [
       }
     },
     {
-      team: "Evil",
-      type: "Mimic",
+      alignment: "Evil",
+      role: "Mimic",
       description: "Can copy another player's ability once per game.",
       action: {
         copy: {
@@ -218,16 +218,16 @@ const extraCharacters = [
       }
     },
     {
-      team: "Evil",
-      type: "Oracle",
+      alignment: "Evil",
+      role: "Oracle",
       description: "Knows the identity of one special good role at the start of the game.",
       sees: [
-        { team: "Good", only: [{ special: true }], limit: 1 }
+        { alignment: "Good", only: [{ special: true }], limit: 1 }
       ]
     },
     {
-      team: "Evil",
-      type: "Saboteur",
+      alignment: "Evil",
+      role: "Saboteur",
       description: "Can make a successful quest appear to have failed (or vice versa) once per game.",
       action: {
         sabotage: {
@@ -238,41 +238,41 @@ const extraCharacters = [
       }
     },
     {
-      team: "Evil",
-      type: "Anarchist",
-      description: "Wins if a certain number of quests fail, regardless of which team ultimately wins.",
+      alignment: "Evil",
+      role: "Anarchist",
+      description: "Wins if a certain number of quests fail, regardless of which alignment ultimately wins.",
       winCondition: {
-        type: "questFailures",
+        role: "questFailures",
         count: 3
       }
     },
     {
-      team: "Neutral",
-      type: "Trickster",
+      alignment: "Neutral",
+      role: "Trickster",
       description: "Wins if they're on exactly 3 quests, regardless of success/failure.",
       winCondition: {
-        type: "questParticipation",
+        role: "questParticipation",
         count: 3
       }
     },
     {
-      team: "Neutral",
-      type: "Gambler",
-      description: "Must secretly bet on which team will win at game start. Wins only if their prediction is correct.",
+      alignment: "Neutral",
+      role: "Gambler",
+      description: "Must secretly bet on which alignment will win at game start. Wins only if their prediction is correct.",
       action: {
         bet: {
-          target: "team",
-          effect: "Wins if the chosen team wins the game.",
+          target: "alignment",
+          effect: "Wins if the chosen alignment wins the game.",
           usage: "once at game start"
         }
       }
     },
     {
-      team: "Neutral",
-      type: "Survivor",
+      alignment: "Neutral",
+      role: "Survivor",
       description: "Wants to avoid being accused/targeted. Wins if never formally accused throughout the game.",
       winCondition: {
-        type: "avoidAccusation"
+        role: "avoidAccusation"
       }
     }
   ];

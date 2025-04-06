@@ -1,4 +1,4 @@
-import { useParams } from "react-router";
+import { useParams, Outlet } from "react-router";
 
 export function meta({ params }: { params: { id: string } }) {
   return [
@@ -54,7 +54,7 @@ export default function GameDetails() {
           </div>
         </div>
       </div>
-      
+      <Outlet />
       <div className="mt-6">
         <a href="/" className="text-blue-500">
           ← Back to Home
