@@ -196,13 +196,13 @@ export function Lobby({
   }, [joinUrl]);
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto px-1 sm:px-0">
       {/* Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+      <div className="text-center mb-5 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
           Game Lobby
         </h1>
-        <p className="text-gray-400 flex items-center justify-center gap-2">
+        <p className="text-sm sm:text-base text-gray-400 flex items-center justify-center gap-2">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
@@ -212,27 +212,27 @@ export function Lobby({
       </div>
 
       {/* Game Code Card */}
-      <div className="bg-gradient-to-b from-stone-800 to-stone-800/80 rounded-2xl p-6 mb-6 border border-stone-700 shadow-lg shadow-black/20">
+      <div className="bg-gradient-to-b from-stone-800 to-stone-800/80 rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 border border-stone-700 shadow-lg shadow-black/20">
         <div className="text-center">
-          <p className="text-gray-400 text-sm mb-2 uppercase tracking-wide font-medium">Share this code</p>
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="bg-stone-900/50 px-6 py-3 rounded-xl border border-stone-600">
-              <span className="text-4xl font-mono font-bold tracking-[0.3em] bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+          <p className="text-gray-400 text-xs sm:text-sm mb-2 uppercase tracking-wide font-medium">Share this code</p>
+          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <div className="bg-stone-900/50 px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl border border-stone-600">
+              <span className="text-2xl sm:text-4xl font-mono font-bold tracking-[0.15em] sm:tracking-[0.3em] bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
                 {game.game_key}
               </span>
             </div>
             <button
               onClick={copyGameCode}
-              className="p-3 bg-stone-700 hover:bg-stone-600 active:scale-95 rounded-xl transition-all border border-stone-600 hover:border-stone-500"
+              className="p-2.5 sm:p-3 min-w-[44px] min-h-[44px] bg-stone-700 hover:bg-stone-600 active:scale-95 rounded-lg sm:rounded-xl transition-all border border-stone-600 hover:border-stone-500 flex items-center justify-center"
               title="Copy game code"
               aria-label={copied ? 'Copied!' : 'Copy game code'}
             >
               {copied ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
               )}
@@ -240,7 +240,7 @@ export function Lobby({
           </div>
           <button
             onClick={copyJoinLink}
-            className="inline-flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+            className="inline-flex items-center gap-1 text-xs sm:text-sm text-blue-400 hover:text-blue-300 transition-colors min-h-[44px] px-3"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
@@ -251,17 +251,17 @@ export function Lobby({
       </div>
 
       {/* Player List */}
-      <div className="bg-gradient-to-b from-stone-800 to-stone-800/80 rounded-2xl p-6 mb-6 border border-stone-700 shadow-lg shadow-black/20">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+      <div className="bg-gradient-to-b from-stone-800 to-stone-800/80 rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 border border-stone-700 shadow-lg shadow-black/20">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
             Players
           </h2>
           <div className="flex items-center gap-2">
             <span
-              className={`px-3 py-1.5 rounded-full text-sm font-bold tabular-nums ${
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold tabular-nums ${
                 playerCount >= 5 && playerCount <= 10
                   ? 'bg-gradient-to-r from-green-900/70 to-emerald-900/70 text-green-400 border border-green-600/50 shadow-sm shadow-green-900/50'
                   : 'bg-gradient-to-r from-yellow-900/70 to-amber-900/70 text-yellow-400 border border-yellow-600/50 shadow-sm shadow-yellow-900/50'
@@ -275,23 +275,23 @@ export function Lobby({
 
         {/* Player count requirement */}
         {playerCount < 5 && (
-          <div className="mb-4 p-3 bg-gradient-to-r from-yellow-900/30 to-amber-900/20 border border-yellow-700/50 rounded-xl text-yellow-400 text-sm flex items-center gap-2" role="alert">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-gradient-to-r from-yellow-900/30 to-amber-900/20 border border-yellow-700/50 rounded-lg sm:rounded-xl text-yellow-400 text-xs sm:text-sm flex items-center gap-2" role="alert">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             Need at least 5 players to start (currently {playerCount})
           </div>
         )}
 
-        {/* Player grid */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Player grid - single column on very small screens, 2 columns otherwise */}
+        <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 sm:gap-3">
           {players.map((player, index) => {
             const isPlayerHost = player.user_id === game.host_id;
             const isCurrentUser = player.user_id === currentUserId;
             return (
               <div
                 key={player.id}
-                className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+                className={`flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-lg sm:rounded-xl transition-all ${
                   isPlayerHost
                     ? 'bg-gradient-to-r from-blue-900/40 to-blue-800/30 border border-blue-600/50 shadow-sm shadow-blue-900/30'
                     : isCurrentUser
@@ -300,9 +300,9 @@ export function Lobby({
                 }`}
                 style={{ animationDelay: `${index * 50}ms` }}
               >
-                {/* Player avatar */}
+                {/* Player avatar - touch-friendly size */}
                 <div
-                  className={`h-11 w-11 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md ${
+                  className={`h-10 w-10 sm:h-11 sm:w-11 shrink-0 rounded-full flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-md ${
                     getAvatarColor(player.id, isPlayerHost)
                   }`}
                   aria-hidden="true"
@@ -310,13 +310,13 @@ export function Lobby({
                   {player.display_name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`font-medium truncate ${isCurrentUser ? 'text-white' : 'text-gray-200'}`}>
+                  <p className={`text-sm sm:text-base font-medium truncate ${isCurrentUser ? 'text-white' : 'text-gray-200'}`}>
                     {player.display_name}
-                    {isCurrentUser && <span className="text-xs text-gray-400 ml-1">(you)</span>}
+                    {isCurrentUser && <span className="text-[10px] sm:text-xs text-gray-400 ml-1">(you)</span>}
                   </p>
                   {isPlayerHost && (
-                    <p className="text-xs text-blue-400 flex items-center gap-1 font-medium">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-yellow-400" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <p className="text-[10px] sm:text-xs text-blue-400 flex items-center gap-1 font-medium">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-yellow-400" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z" />
                       </svg>
                       Host
@@ -331,27 +331,27 @@ export function Lobby({
           {Array.from({ length: Math.max(0, 5 - playerCount) }).map((_, i) => (
             <div
               key={`empty-${i}`}
-              className="flex items-center gap-3 p-3 rounded-xl bg-stone-800/30 border-2 border-stone-700/50 border-dashed"
+              className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-stone-800/30 border-2 border-stone-700/50 border-dashed"
             >
-              <div className="h-11 w-11 rounded-full bg-stone-700/30 flex items-center justify-center" aria-hidden="true">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="h-10 w-10 sm:h-11 sm:w-11 shrink-0 rounded-full bg-stone-700/30 flex items-center justify-center" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
-              <p className="text-stone-500 text-sm italic">Waiting...</p>
+              <p className="text-stone-500 text-xs sm:text-sm italic">Waiting...</p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="space-y-3">
+      {/* Action Buttons - touch-friendly with minimum 48px height */}
+      <div className="space-y-2.5 sm:space-y-3">
         {isHost ? (
           <>
             <button
               onClick={onStartGame}
               disabled={!canStart || isStarting}
-              className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all active:scale-[0.98] ${
+              className={`w-full min-h-[48px] py-3 sm:py-4 px-4 sm:px-6 rounded-lg sm:rounded-xl font-semibold text-base sm:text-lg transition-all active:scale-[0.98] ${
                 canStart && !isStarting
                   ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white shadow-lg shadow-green-900/40 border border-green-500/30'
                   : 'bg-stone-700/80 text-stone-400 cursor-not-allowed border border-stone-600/50'
@@ -368,26 +368,26 @@ export function Lobby({
                 </span>
               ) : canStart ? (
                 <span className="flex items-center justify-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M8 5v14l11-7z" />
                   </svg>
                   Start Game
                 </span>
               ) : (
                 <span className="flex items-center justify-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
-                  Need {5 - playerCount} more player{5 - playerCount > 1 ? 's' : ''}
+                  <span className="text-sm sm:text-base">Need {5 - playerCount} more player{5 - playerCount > 1 ? 's' : ''}</span>
                 </span>
               )}
             </button>
             {startError && (
-              <div className="flex items-center justify-center gap-2 text-red-400 text-sm p-2 bg-red-900/20 rounded-lg border border-red-800/50" role="alert">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <div className="flex items-center justify-center gap-2 text-red-400 text-xs sm:text-sm p-2 bg-red-900/20 rounded-lg border border-red-800/50" role="alert">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                {startError}
+                <span className="truncate">{startError}</span>
               </div>
             )}
           </>
@@ -395,7 +395,7 @@ export function Lobby({
           <button
             onClick={onLeaveGame}
             disabled={isLeaving}
-            className="w-full py-4 px-6 rounded-xl font-semibold text-lg bg-gradient-to-r from-red-900/40 to-rose-900/40 hover:from-red-900/60 hover:to-rose-900/60 text-red-400 border border-red-700/50 transition-all active:scale-[0.98]"
+            className="w-full min-h-[48px] py-3 sm:py-4 px-4 sm:px-6 rounded-lg sm:rounded-xl font-semibold text-base sm:text-lg bg-gradient-to-r from-red-900/40 to-rose-900/40 hover:from-red-900/60 hover:to-rose-900/60 text-red-400 border border-red-700/50 transition-all active:scale-[0.98]"
             aria-busy={isLeaving}
           >
             {isLeaving ? (
@@ -417,11 +417,11 @@ export function Lobby({
           </button>
         )}
         {leaveError && (
-          <div className="flex items-center justify-center gap-2 text-red-400 text-sm p-2 bg-red-900/20 rounded-lg border border-red-800/50" role="alert">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <div className="flex items-center justify-center gap-2 text-red-400 text-xs sm:text-sm p-2 bg-red-900/20 rounded-lg border border-red-800/50" role="alert">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            {leaveError}
+            <span className="truncate">{leaveError}</span>
           </div>
         )}
       </div>

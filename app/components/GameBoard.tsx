@@ -110,25 +110,25 @@ export function ScoreBoard({ game }: ScoreBoardProps) {
   const rounds = [1, 2, 3, 4, 5];
 
   return (
-    <div className="bg-gradient-to-br from-stone-800 to-stone-800/80 rounded-2xl p-4 sm:p-5 border border-stone-700/50 shadow-lg mb-4 sm:mb-6">
-      {/* Main Score Display */}
-      <div className="flex items-center justify-between gap-2 sm:gap-4">
+    <div className="bg-gradient-to-br from-stone-800 to-stone-800/80 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 border border-stone-700/50 shadow-lg mb-3 sm:mb-4 lg:mb-6">
+      {/* Main Score Display - compact on mobile */}
+      <div className="flex items-center justify-between gap-2 sm:gap-3 md:gap-4">
         {/* Good Team Score */}
-        <div className="flex-1 text-center">
+        <div className="flex-1 text-center min-w-0">
           <div className="inline-flex flex-col items-center">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 flex items-center justify-center mb-1 sm:mb-2 shadow-lg shadow-blue-500/10">
-              <span className="text-2xl sm:text-4xl font-bold text-blue-400 tabular-nums">
+            <div className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-lg sm:rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 flex items-center justify-center mb-1 shadow-lg shadow-blue-500/10">
+              <span className="text-xl sm:text-3xl md:text-4xl font-bold text-blue-400 tabular-nums">
                 {game.good_victories ?? 0}
               </span>
             </div>
-            <span className="text-[10px] sm:text-xs text-blue-400/80 uppercase tracking-wider font-medium">
+            <span className="text-[9px] sm:text-[10px] md:text-xs text-blue-400/80 uppercase tracking-wider font-medium">
               Good
             </span>
           </div>
         </div>
 
-        {/* Round Indicators */}
-        <div className="flex gap-1 sm:gap-2 items-center">
+        {/* Round Indicators - smaller on mobile, scales up */}
+        <div className="flex gap-0.5 sm:gap-1.5 md:gap-2 items-center shrink-0">
           {rounds.map((round) => {
             const isPast = round < (game.current_round ?? 1);
             const isCurrent = round === game.current_round;
@@ -136,12 +136,12 @@ export function ScoreBoard({ game }: ScoreBoardProps) {
             const isEvilWin = isPast && !isGoodWin;
             const isFuture = round > (game.current_round ?? 1);
 
-            // Visual states
-            let containerClasses = 'w-7 h-7 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center font-semibold transition-all duration-300';
-            let numberClasses = 'text-xs sm:text-sm';
+            // Visual states - responsive sizing
+            let containerClasses = 'w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-md sm:rounded-lg flex items-center justify-center font-semibold transition-all duration-300';
+            let numberClasses = 'text-[10px] sm:text-xs md:text-sm';
 
             if (isCurrent) {
-              containerClasses += ' bg-gradient-to-br from-white/10 to-white/5 border-2 border-white/40 shadow-lg shadow-white/5 ring-2 ring-white/20 ring-offset-2 ring-offset-stone-800';
+              containerClasses += ' bg-gradient-to-br from-white/10 to-white/5 border-2 border-white/40 shadow-lg shadow-white/5 ring-1 sm:ring-2 ring-white/20 ring-offset-1 sm:ring-offset-2 ring-offset-stone-800';
               numberClasses += ' text-white';
             } else if (isGoodWin) {
               containerClasses += ' bg-gradient-to-br from-blue-500/30 to-blue-600/20 border border-blue-500/50';
@@ -167,50 +167,50 @@ export function ScoreBoard({ game }: ScoreBoardProps) {
         </div>
 
         {/* Evil Team Score */}
-        <div className="flex-1 text-center">
+        <div className="flex-1 text-center min-w-0">
           <div className="inline-flex flex-col items-center">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30 flex items-center justify-center mb-1 sm:mb-2 shadow-lg shadow-red-500/10">
-              <span className="text-2xl sm:text-4xl font-bold text-red-400 tabular-nums">
+            <div className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-lg sm:rounded-xl bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30 flex items-center justify-center mb-1 shadow-lg shadow-red-500/10">
+              <span className="text-xl sm:text-3xl md:text-4xl font-bold text-red-400 tabular-nums">
                 {game.evil_victories ?? 0}
               </span>
             </div>
-            <span className="text-[10px] sm:text-xs text-red-400/80 uppercase tracking-wider font-medium">
+            <span className="text-[9px] sm:text-[10px] md:text-xs text-red-400/80 uppercase tracking-wider font-medium">
               Evil
             </span>
           </div>
         </div>
       </div>
 
-      {/* Victory Progress Bars */}
-      <div className="mt-3 sm:mt-4 flex gap-2 items-center">
+      {/* Victory Progress Bars - hidden on very small screens for cleaner look */}
+      <div className="mt-2 sm:mt-3 md:mt-4 flex gap-1.5 sm:gap-2 items-center">
         {/* Good progress */}
         <div className="flex-1 flex items-center gap-1 sm:gap-2">
-          <div className="flex-1 h-1.5 sm:h-2 rounded-full bg-stone-700/80 overflow-hidden">
+          <div className="flex-1 h-1 sm:h-1.5 md:h-2 rounded-full bg-stone-700/80 overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-700 ease-out rounded-full"
               style={{ width: `${((game.good_victories ?? 0) / 3) * 100}%` }}
             />
           </div>
           {(game.good_victories ?? 0) > 0 && (
-            <span className="text-[10px] text-blue-400/60 tabular-nums hidden sm:inline">
+            <span className="text-[9px] sm:text-[10px] text-blue-400/60 tabular-nums hidden sm:inline">
               {game.good_victories}/3
             </span>
           )}
         </div>
 
         {/* Divider */}
-        <div className="w-px h-3 bg-stone-600/50" />
+        <div className="w-px h-2 sm:h-3 bg-stone-600/50" />
 
         {/* Evil progress */}
         <div className="flex-1 flex items-center gap-1 sm:gap-2 flex-row-reverse">
-          <div className="flex-1 h-1.5 sm:h-2 rounded-full bg-stone-700/80 overflow-hidden">
+          <div className="flex-1 h-1 sm:h-1.5 md:h-2 rounded-full bg-stone-700/80 overflow-hidden">
             <div
               className="h-full bg-gradient-to-l from-red-500 to-red-400 transition-all duration-700 ease-out ml-auto rounded-full"
               style={{ width: `${((game.evil_victories ?? 0) / 3) * 100}%` }}
             />
           </div>
           {(game.evil_victories ?? 0) > 0 && (
-            <span className="text-[10px] text-red-400/60 tabular-nums hidden sm:inline">
+            <span className="text-[9px] sm:text-[10px] text-red-400/60 tabular-nums hidden sm:inline">
               {game.evil_victories}/3
             </span>
           )}
@@ -429,34 +429,34 @@ export function CharacterInfoPanel({
 
   return (
     <div
-      className={`rounded-2xl border ${teamBorderColor} bg-gradient-to-br ${teamGradient} bg-stone-800/50 overflow-hidden shadow-lg ${teamGlow}`}
+      className={`rounded-xl sm:rounded-2xl border ${teamBorderColor} bg-gradient-to-br ${teamGradient} bg-stone-800/50 overflow-hidden shadow-lg ${teamGlow}`}
     >
       {/* Character Card Header with Icon */}
-      <div className="p-4 pb-3">
-        <div className="flex items-start gap-3">
-          {/* Character Icon/Artwork */}
+      <div className="p-3 sm:p-4 pb-2 sm:pb-3">
+        <div className="flex items-start gap-2.5 sm:gap-3">
+          {/* Character Icon/Artwork - responsive sizing */}
           <div
-            className={`shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br ${iconConfig.bgGradient} flex items-center justify-center shadow-lg ring-2 ring-white/10`}
+            className={`shrink-0 w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-lg sm:rounded-xl bg-gradient-to-br ${iconConfig.bgGradient} flex items-center justify-center shadow-lg ring-1 sm:ring-2 ring-white/10`}
             aria-hidden="true"
           >
-            <span className="text-2xl sm:text-3xl">{iconConfig.icon}</span>
+            <span className="text-xl sm:text-2xl md:text-3xl">{iconConfig.icon}</span>
           </div>
 
           {/* Character Name and Team */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">
+            <div className="flex items-start justify-between gap-1.5 sm:gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">
                   Your Role
                 </p>
                 <h3
-                  className={`text-lg sm:text-xl font-bold ${teamAccent} truncate`}
+                  className={`text-base sm:text-lg md:text-xl font-bold ${teamAccent} truncate`}
                 >
                   {player.character ?? 'Unknown'}
                 </h3>
               </div>
               <span
-                className={`shrink-0 px-2 py-1 rounded-lg text-[10px] uppercase tracking-wider font-medium ${teamBadgeBg} ${teamAccent}`}
+                className={`shrink-0 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg text-[9px] sm:text-[10px] uppercase tracking-wider font-medium ${teamBadgeBg} ${teamAccent}`}
               >
                 {player.team ?? 'Unknown'}
               </span>
@@ -465,18 +465,18 @@ export function CharacterInfoPanel({
         </div>
 
         {/* Character Description */}
-        <p className="text-xs sm:text-sm text-gray-400 mt-3 leading-relaxed">
+        <p className="text-[11px] sm:text-xs md:text-sm text-gray-400 mt-2 sm:mt-3 leading-relaxed line-clamp-2 sm:line-clamp-none">
           {characterDef?.description ?? 'Unknown character abilities'}
         </p>
       </div>
 
       {/* Special Abilities Section */}
       {hasAbilities && (
-        <div className="border-t border-stone-700/50 bg-stone-800/20 px-4 py-3">
-          <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">
+        <div className="border-t border-stone-700/50 bg-stone-800/20 px-3 sm:px-4 py-2.5 sm:py-3">
+          <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-500 mb-1.5 sm:mb-2">
             Special Abilities
           </p>
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             {/* Actions */}
             {characterActions.map((actionId) => {
               const actionDisplay = ACTION_DISPLAYS[actionId];
@@ -485,23 +485,23 @@ export function CharacterInfoPanel({
               return (
                 <div
                   key={actionId}
-                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-stone-700/40 border border-stone-600/30"
+                  className="flex items-center gap-2 sm:gap-2.5 px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-md sm:rounded-lg bg-stone-700/40 border border-stone-600/30"
                 >
                   <span
-                    className="shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center text-base"
+                    className="shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center text-sm sm:text-base"
                     aria-hidden="true"
                   >
                     {actionDisplay.icon}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-gray-200 truncate">
+                    <p className="text-[11px] sm:text-xs font-medium text-gray-200 truncate">
                       {actionDisplay.name}
                     </p>
-                    <p className="text-[10px] text-gray-500 truncate">
+                    <p className="text-[9px] sm:text-[10px] text-gray-500 truncate hidden sm:block">
                       {actionDisplay.shortDesc}
                     </p>
                   </div>
-                  <span className="shrink-0 text-[9px] text-amber-400/80 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                  <span className="shrink-0 text-[8px] sm:text-[9px] text-amber-400/80 bg-amber-500/10 px-1 sm:px-1.5 py-0.5 rounded">
                     1x
                   </span>
                 </div>
@@ -516,23 +516,23 @@ export function CharacterInfoPanel({
               return (
                 <div
                   key={effectId}
-                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-purple-500/10 border border-purple-500/20"
+                  className="flex items-center gap-2 sm:gap-2.5 px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-md sm:rounded-lg bg-purple-500/10 border border-purple-500/20"
                 >
                   <span
-                    className="shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-fuchsia-500/20 flex items-center justify-center text-base"
+                    className="shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg bg-gradient-to-br from-purple-500/20 to-fuchsia-500/20 flex items-center justify-center text-sm sm:text-base"
                     aria-hidden="true"
                   >
                     {effectDisplay.icon}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-purple-200 truncate">
+                    <p className="text-[11px] sm:text-xs font-medium text-purple-200 truncate">
                       {effectDisplay.name}
                     </p>
-                    <p className="text-[10px] text-purple-400/70 truncate">
+                    <p className="text-[9px] sm:text-[10px] text-purple-400/70 truncate hidden sm:block">
                       {effectDisplay.shortDesc}
                     </p>
                   </div>
-                  <span className="shrink-0 text-[9px] text-purple-400/80 bg-purple-500/10 px-1.5 py-0.5 rounded">
+                  <span className="shrink-0 text-[8px] sm:text-[9px] text-purple-400/80 bg-purple-500/10 px-1 sm:px-1.5 py-0.5 rounded">
                     Passive
                   </span>
                 </div>
@@ -544,24 +544,24 @@ export function CharacterInfoPanel({
 
       {/* Known Information Section */}
       {resolvedInfo.knownPlayers && resolvedInfo.knownPlayers.length > 0 && (
-        <div className="border-t border-stone-700/50 bg-stone-800/30 p-4">
+        <div className="border-t border-stone-700/50 bg-stone-800/30 p-3 sm:p-4">
           {/* Unreliable info warning */}
           {isUnreliable && (
-            <div className="flex items-center gap-2 mb-3 px-2 py-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-              <span className="text-yellow-400 text-sm">⚠️</span>
-              <span className="text-xs text-yellow-400/90">
+            <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3 px-2 py-1 sm:py-1.5 rounded-md sm:rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+              <span className="text-yellow-400 text-xs sm:text-sm">⚠️</span>
+              <span className="text-[10px] sm:text-xs text-yellow-400/90">
                 Information may be unreliable
               </span>
             </div>
           )}
 
           {/* Section header */}
-          <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">
+          <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-500 mb-1.5 sm:mb-2">
             {resolvedInfo.description || 'Known Information'}
           </p>
 
-          {/* Known players grid */}
-          <div className="flex flex-wrap gap-1.5">
+          {/* Known players grid - responsive wrapping */}
+          <div className="flex flex-wrap gap-1 sm:gap-1.5">
             {resolvedInfo.knownPlayers.map((playerId) => {
               const knownPlayer = players.find((p) => p.id === playerId);
               const label = resolvedInfo.knownPlayerLabels?.[playerId];
@@ -569,7 +569,7 @@ export function CharacterInfoPanel({
               const isSeer = label?.toLowerCase().includes('seer');
 
               let pillClasses =
-                'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors';
+                'inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium transition-colors';
               let iconEmoji = '👤';
               if (isEvil) {
                 pillClasses +=
@@ -586,14 +586,14 @@ export function CharacterInfoPanel({
 
               return (
                 <div key={playerId} className={pillClasses}>
-                  <span className="text-sm" aria-hidden="true">
+                  <span className="text-xs sm:text-sm" aria-hidden="true">
                     {iconEmoji}
                   </span>
-                  <span className="truncate max-w-[100px]">
+                  <span className="truncate max-w-[80px] sm:max-w-[100px]">
                     {knownPlayer?.display_name ?? 'Unknown'}
                   </span>
                   {label && (
-                    <span className="opacity-60 text-[10px]">{label}</span>
+                    <span className="opacity-60 text-[9px] sm:text-[10px] hidden sm:inline">{label}</span>
                   )}
                 </div>
               );
@@ -621,7 +621,7 @@ function PhaseIndicator({ phase, rejectionCount = 0 }: PhaseIndicatorProps) {
 
   if (!config) {
     return (
-      <div className="text-center mb-4 sm:mb-6">
+      <div className="text-center mb-3 sm:mb-4 lg:mb-6">
         <span className="inline-block px-4 py-2 bg-stone-700 rounded-xl text-sm text-gray-400">
           Unknown Phase
         </span>
@@ -630,19 +630,19 @@ function PhaseIndicator({ phase, rejectionCount = 0 }: PhaseIndicatorProps) {
   }
 
   return (
-    <div className="mb-4 sm:mb-6">
-      <div className={`rounded-xl ${config.bgColor} border ${config.borderColor} p-3 sm:p-4 transition-all duration-300`}>
-        <div className="flex items-center justify-between gap-3">
+    <div className="mb-3 sm:mb-4 lg:mb-6">
+      <div className={`rounded-lg sm:rounded-xl ${config.bgColor} border ${config.borderColor} p-2.5 sm:p-3 md:p-4 transition-all duration-300`}>
+        <div className="flex items-center justify-between gap-2 sm:gap-3">
           {/* Phase info */}
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="text-xl sm:text-2xl shrink-0" role="img" aria-hidden="true">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <span className="text-lg sm:text-xl md:text-2xl shrink-0" role="img" aria-hidden="true">
               {config.icon}
             </span>
-            <div className="min-w-0">
-              <h2 className={`text-base sm:text-lg font-bold ${config.color} truncate`}>
+            <div className="min-w-0 flex-1">
+              <h2 className={`text-sm sm:text-base md:text-lg font-bold ${config.color} truncate`}>
                 {config.name}
               </h2>
-              <p className="text-xs sm:text-sm text-gray-400 truncate">
+              <p className="text-[10px] sm:text-xs md:text-sm text-gray-400 truncate">
                 {config.description}
               </p>
             </div>
@@ -650,11 +650,11 @@ function PhaseIndicator({ phase, rejectionCount = 0 }: PhaseIndicatorProps) {
 
           {/* Rejection counter (only during leader voting) */}
           {phase === 'voting_for_leader' && rejectionCount > 0 && (
-            <div className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg bg-orange-500/20 border border-orange-500/30">
-              <span className="text-orange-400 text-xs sm:text-sm font-medium tabular-nums">
+            <div className="shrink-0 flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg bg-orange-500/20 border border-orange-500/30">
+              <span className="text-orange-400 text-[10px] sm:text-xs md:text-sm font-medium tabular-nums">
                 {rejectionCount}/3
               </span>
-              <span className="text-orange-400/60 text-[10px] sm:text-xs">
+              <span className="text-orange-400/60 text-[9px] sm:text-[10px] md:text-xs hidden xs:inline">
                 rejects
               </span>
             </div>
@@ -839,47 +839,51 @@ export function GameBoard({ renderPhase }: GameBoardProps) {
   const leaderName = alivePlayers.find(p => p.id === leaderId)?.display_name;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-stone-900 via-stone-900 to-stone-950 text-white">
-      {/* Top header with game info */}
+    <div className="min-h-screen bg-gradient-to-b from-stone-900 via-stone-900 to-stone-950 text-white overflow-x-hidden">
+      {/* Top header with game info - responsive padding and touch-friendly back button */}
       <header className="sticky top-0 z-10 bg-stone-900/95 backdrop-blur-sm border-b border-stone-800">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Link
               to="/"
-              className="p-2 -ml-2 rounded-lg text-gray-400 hover:text-white hover:bg-stone-800 transition-colors"
+              className="shrink-0 p-2.5 -ml-1 rounded-xl text-gray-400 hover:text-white hover:bg-stone-800 active:bg-stone-700 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Back to home"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
-            <div>
-              <p className="text-xs text-gray-500">Game</p>
-              <p className="text-sm font-medium text-gray-300">{game.game_key}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide">Game</p>
+              <p className="text-sm sm:text-base font-semibold text-gray-200 font-mono tracking-wide truncate">{game.game_key}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">Playing as</span>
-            <span className="text-sm font-medium text-gray-300">{currentPlayer.display_name}</span>
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <span className="text-[10px] sm:text-xs text-gray-500 hidden xs:inline">Playing as</span>
+            <span className="text-sm font-medium text-gray-200 truncate max-w-[120px] sm:max-w-none">{currentPlayer.display_name}</span>
           </div>
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+      {/* Main content - responsive padding for all viewport sizes */}
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4 lg:py-6">
         {/* Score Board */}
         <ScoreBoard game={game} />
 
         {/* Phase Indicator with rejection count */}
         <PhaseIndicator phase={game.phase as GamePhase} rejectionCount={game.rejection_count ?? 0} />
 
-        {/* Main Game Area - Responsive Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* Main Phase Content - Takes full width on mobile, 2 cols on desktop */}
-          <div className="lg:col-span-2 order-1">
+        {/* Main Game Area - Responsive Grid
+            Mobile (<768px): Single column, phase content first
+            Tablet (768-1024px): 2 columns, main content takes 1.5 cols worth
+            Desktop (>1024px): 3 columns, main content takes 2 cols
+        */}
+        <div className="grid grid-cols-1 md:grid-cols-5 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
+          {/* Main Phase Content - Full width mobile, 3/5 tablet, 2/3 desktop */}
+          <div className="md:col-span-3 lg:col-span-2 order-1">
             <div className="bg-gradient-to-br from-stone-800 to-stone-800/80 rounded-2xl border border-stone-700/50 shadow-xl overflow-hidden">
               {/* Phase content header for mobile context */}
-              <div className="lg:hidden border-b border-stone-700/50 p-3 flex items-center justify-between">
+              <div className="md:hidden border-b border-stone-700/50 p-3 flex items-center justify-between">
                 <span className="text-xs text-gray-500 uppercase tracking-wider">Current Phase</span>
                 {leaderName && (
                   <span className="text-xs text-amber-400">
@@ -887,7 +891,7 @@ export function GameBoard({ renderPhase }: GameBoardProps) {
                   </span>
                 )}
               </div>
-              <div className="p-4 sm:p-6 min-h-[280px] sm:min-h-[320px] flex items-center justify-center">
+              <div className="p-4 sm:p-5 lg:p-6 min-h-[260px] sm:min-h-[300px] lg:min-h-[340px] flex items-center justify-center">
                 {renderPhase ? (
                   renderPhase(game.phase as GamePhase | null)
                 ) : (
@@ -899,26 +903,32 @@ export function GameBoard({ renderPhase }: GameBoardProps) {
             </div>
           </div>
 
-          {/* Sidebar - Moves below main content on mobile */}
-          <div className="order-2 lg:order-2 space-y-4">
-            {/* Mobile sidebar toggle */}
+          {/* Sidebar - Below main on mobile, right side on tablet/desktop */}
+          <div className="md:col-span-2 lg:col-span-1 order-2 space-y-4">
+            {/* Mobile sidebar toggle - hidden on tablet and up */}
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="lg:hidden w-full flex items-center justify-between px-4 py-3 bg-stone-800/50 rounded-xl border border-stone-700/50 text-sm text-gray-400"
+              className="md:hidden w-full flex items-center justify-between px-4 py-3.5 min-h-[48px] bg-stone-800/50 rounded-xl border border-stone-700/50 text-sm text-gray-400 active:bg-stone-700/50 transition-colors"
+              aria-expanded={!sidebarCollapsed}
+              aria-controls="sidebar-content"
             >
               <span>{sidebarCollapsed ? 'Show' : 'Hide'} game info</span>
               <svg
-                className={`w-5 h-5 transition-transform ${sidebarCollapsed ? '' : 'rotate-180'}`}
+                className={`w-5 h-5 transition-transform duration-200 ${sidebarCollapsed ? '' : 'rotate-180'}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
+                aria-hidden="true"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
 
-            {/* Sidebar content - collapsible on mobile */}
-            <div className={`space-y-4 ${sidebarCollapsed ? 'hidden lg:block' : ''}`}>
+            {/* Sidebar content - collapsible on mobile only */}
+            <div 
+              id="sidebar-content"
+              className={`space-y-4 ${sidebarCollapsed ? 'hidden md:block' : ''}`}
+            >
               {/* Character Info */}
               <SidebarSection>
                 <CharacterInfoPanel
