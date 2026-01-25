@@ -2,13 +2,12 @@
  * LeaderVoting Component
  *
  * Displays the leader voting interface with:
- * - Current crown holder's name
- * - Rejection count (X/3)
- * - Approve/Reject buttons (disabled after voting)
- * - Waiting message after voting
- * - Vote results when all votes are in
+ * - Current crown holder's name with prominent styling
+ * - Rejection count (X/3) with warning states
+ * - Clear approve/reject buttons with icons
+ * - Animated waiting state with vote progress
+ * - Vote result reveal animation
  * - Double-click prevention
- * - Vote completion handling
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -64,6 +63,43 @@ function calculateResults(votes: Record<string, string>): VoteResults {
 }
 
 // =============================================================================
+// Icons
+// =============================================================================
+
+function CheckIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
+
+function XIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  );
+}
+
+function CrownIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 1L9 9l-8 3 8 3 3 8 3-8 8-3-8-3-3-8z" />
+    </svg>
+  );
+}
+
+function SpinnerIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg className={`animate-spin ${className}`} viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
+  );
+}
+
+// =============================================================================
 // Sub-Components
 // =============================================================================
 
@@ -76,42 +112,66 @@ interface VotingButtonsProps {
 
 function VotingButtons({ onApprove, onReject, disabled, isSubmitting }: VotingButtonsProps) {
   return (
-    <div className="flex gap-4 justify-center">
+    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+      {/* Approve Button */}
       <button
         onClick={onApprove}
         disabled={disabled || isSubmitting}
-        className={`px-8 py-3 rounded-xl font-semibold transition-colors ${
-          disabled || isSubmitting
-            ? 'bg-stone-600 text-stone-400 cursor-not-allowed'
-            : 'bg-green-600 hover:bg-green-500 text-white'
-        }`}
+        className={`
+          group relative w-full sm:w-auto min-w-[160px] px-8 py-4 rounded-2xl font-bold text-lg
+          transition-all duration-300 transform
+          ${disabled || isSubmitting
+            ? 'bg-stone-700 text-stone-500 cursor-not-allowed scale-95 opacity-60'
+            : 'bg-gradient-to-br from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white shadow-lg shadow-green-900/30 hover:shadow-green-900/50 hover:scale-105 active:scale-[0.98]'
+          }
+        `}
         aria-label="Approve leader"
         aria-busy={isSubmitting}
       >
-        {isSubmitting ? (
-          <span className="flex items-center gap-2">
-            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            Voting...
-          </span>
-        ) : (
-          'Approve'
+        <span className="flex items-center justify-center gap-3">
+          {isSubmitting ? (
+            <>
+              <SpinnerIcon className="w-5 h-5" />
+              <span>Voting...</span>
+            </>
+          ) : (
+            <>
+              <span className="p-1 rounded-lg bg-white/20">
+                <CheckIcon className="w-5 h-5" />
+              </span>
+              <span>Approve</span>
+            </>
+          )}
+        </span>
+        {!disabled && !isSubmitting && (
+          <div className="absolute inset-0 rounded-2xl bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
         )}
       </button>
+
+      {/* Reject Button */}
       <button
         onClick={onReject}
         disabled={disabled || isSubmitting}
-        className={`px-8 py-3 rounded-xl font-semibold transition-colors ${
-          disabled || isSubmitting
-            ? 'bg-stone-600 text-stone-400 cursor-not-allowed'
-            : 'bg-red-600 hover:bg-red-500 text-white'
-        }`}
+        className={`
+          group relative w-full sm:w-auto min-w-[160px] px-8 py-4 rounded-2xl font-bold text-lg
+          transition-all duration-300 transform
+          ${disabled || isSubmitting
+            ? 'bg-stone-700 text-stone-500 cursor-not-allowed scale-95 opacity-60'
+            : 'bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-400 hover:to-rose-500 text-white shadow-lg shadow-red-900/30 hover:shadow-red-900/50 hover:scale-105 active:scale-[0.98]'
+          }
+        `}
         aria-label="Reject leader"
         aria-busy={isSubmitting}
       >
-        Reject
+        <span className="flex items-center justify-center gap-3">
+          <span className="p-1 rounded-lg bg-white/20">
+            <XIcon className="w-5 h-5" />
+          </span>
+          <span>Reject</span>
+        </span>
+        {!disabled && !isSubmitting && (
+          <div className="absolute inset-0 rounded-2xl bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+        )}
       </button>
     </div>
   );
@@ -122,30 +182,73 @@ interface WaitingMessageProps {
   expectedCount: number;
   hasVoted: boolean;
   myVote: LeaderVote | null;
+  players: Player[];
+  votes: Record<string, string>;
 }
 
-function WaitingMessage({ voteCount, expectedCount, hasVoted, myVote }: WaitingMessageProps) {
+function WaitingMessage({ voteCount, expectedCount, hasVoted, myVote, players, votes }: WaitingMessageProps) {
+  // Get voted/not-voted players
+  const votedPlayerIds = new Set(Object.keys(votes));
+  const alivePlayers = players.filter(p => p.is_alive);
+  
   return (
-    <div className="text-center">
+    <div className="space-y-6">
+      {/* Your vote confirmation */}
       {hasVoted && myVote && (
-        <div className="mb-4">
-          <span
-            className={`inline-block px-4 py-2 rounded-lg ${
-              myVote === 'yes' ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'
-            }`}
+        <div className="flex justify-center animate-fade-in">
+          <div
+            className={`
+              inline-flex items-center gap-3 px-6 py-3 rounded-xl
+              ${myVote === 'yes' 
+                ? 'bg-gradient-to-r from-emerald-900/60 to-green-900/60 border border-emerald-600/50 text-emerald-300' 
+                : 'bg-gradient-to-r from-red-900/60 to-rose-900/60 border border-red-600/50 text-red-300'
+              }
+            `}
           >
-            You voted: {myVote === 'yes' ? 'Approve' : 'Reject'}
-          </span>
+            <span className={`p-1 rounded-lg ${myVote === 'yes' ? 'bg-emerald-500/30' : 'bg-red-500/30'}`}>
+              {myVote === 'yes' ? <CheckIcon className="w-5 h-5" /> : <XIcon className="w-5 h-5" />}
+            </span>
+            <span className="font-semibold">
+              You voted to {myVote === 'yes' ? 'Approve' : 'Reject'}
+            </span>
+          </div>
         </div>
       )}
-      <div className="flex items-center justify-center gap-2 text-gray-400">
-        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-        </svg>
-        <span>
-          Waiting for votes... ({voteCount}/{expectedCount})
-        </span>
+
+      {/* Vote progress visualization */}
+      <div className="bg-stone-800/50 rounded-2xl p-4 border border-stone-700/50">
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <SpinnerIcon className="w-5 h-5 text-blue-400" />
+          <span className="text-gray-300">
+            Waiting for votes...
+          </span>
+        </div>
+        
+        {/* Player vote indicators */}
+        <div className="flex flex-wrap gap-2 justify-center">
+          {alivePlayers.map((player) => {
+            const hasVoted = votedPlayerIds.has(player.id);
+            return (
+              <div
+                key={player.id}
+                className={`
+                  px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-300
+                  ${hasVoted 
+                    ? 'bg-blue-600/40 border border-blue-500/50 text-blue-300' 
+                    : 'bg-stone-700/50 border border-stone-600/50 text-stone-400'
+                  }
+                `}
+              >
+                <span className="flex items-center gap-2">
+                  {hasVoted && (
+                    <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                  )}
+                  {player.display_name}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -157,38 +260,92 @@ interface VoteResultsDisplayProps {
 
 function VoteResultsDisplay({ results }: VoteResultsDisplayProps) {
   const { yesCount, noCount, approved } = results;
+  const [showResult, setShowResult] = useState(false);
+  const [showCards, setShowCards] = useState(false);
+  
+  // Staggered animation
+  useEffect(() => {
+    const timer1 = setTimeout(() => setShowResult(true), 200);
+    const timer2 = setTimeout(() => setShowCards(true), 500);
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, []);
 
   return (
-    <div className="text-center animate-fade-in">
-      {/* Result banner */}
+    <div className="space-y-6">
+      {/* Result banner with animation */}
       <div
-        className={`mb-6 py-4 px-6 rounded-xl ${
-          approved ? 'bg-green-900/50 border border-green-700' : 'bg-red-900/50 border border-red-700'
-        }`}
+        className={`
+          p-6 rounded-2xl transform transition-all duration-700 ease-out
+          ${showResult ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-4'}
+          ${approved 
+            ? 'bg-gradient-to-br from-emerald-900/60 to-green-900/60 border-2 border-emerald-500/50' 
+            : 'bg-gradient-to-br from-red-900/60 to-rose-900/60 border-2 border-red-500/50'
+          }
+        `}
       >
+        <div className="flex items-center justify-center gap-3 mb-2">
+          <span className={`p-2 rounded-xl ${approved ? 'bg-emerald-500/30' : 'bg-red-500/30'}`}>
+            {approved ? <CheckIcon className="w-8 h-8 text-emerald-400" /> : <XIcon className="w-8 h-8 text-red-400" />}
+          </span>
+        </div>
         <h3
-          className={`text-2xl font-bold ${approved ? 'text-green-400' : 'text-red-400'}`}
+          className={`text-2xl font-bold text-center ${approved ? 'text-emerald-300' : 'text-red-300'}`}
           role="alert"
         >
           {approved ? 'Leader Approved!' : 'Leader Rejected!'}
         </h3>
       </div>
 
-      {/* Vote breakdown */}
-      <div className="flex justify-center gap-8">
+      {/* Vote cards with staggered reveal */}
+      <div className="flex justify-center gap-3 flex-wrap">
+        {[...Array(yesCount)].map((_, i) => (
+          <div
+            key={`yes-${i}`}
+            className={`
+              w-12 h-12 rounded-xl flex items-center justify-center
+              bg-gradient-to-br from-emerald-600 to-green-700 border-2 border-emerald-400/50
+              transform transition-all duration-500 ease-out shadow-lg shadow-emerald-900/30
+              ${showCards ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}
+            `}
+            style={{ transitionDelay: `${i * 100}ms` }}
+          >
+            <CheckIcon className="w-6 h-6 text-white" />
+          </div>
+        ))}
+        {[...Array(noCount)].map((_, i) => (
+          <div
+            key={`no-${i}`}
+            className={`
+              w-12 h-12 rounded-xl flex items-center justify-center
+              bg-gradient-to-br from-red-600 to-rose-700 border-2 border-red-400/50
+              transform transition-all duration-500 ease-out shadow-lg shadow-red-900/30
+              ${showCards ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}
+            `}
+            style={{ transitionDelay: `${(yesCount + i) * 100}ms` }}
+          >
+            <XIcon className="w-6 h-6 text-white" />
+          </div>
+        ))}
+      </div>
+
+      {/* Vote count display */}
+      <div className="flex justify-center gap-12">
         <div className="text-center">
-          <p className="text-3xl font-bold text-green-400">{yesCount}</p>
-          <p className="text-sm text-gray-400">Approved</p>
+          <p className="text-4xl font-bold text-emerald-400 tabular-nums">{yesCount}</p>
+          <p className="text-sm text-gray-400 font-medium">Approved</p>
         </div>
         <div className="text-center">
-          <p className="text-3xl font-bold text-red-400">{noCount}</p>
-          <p className="text-sm text-gray-400">Rejected</p>
+          <p className="text-4xl font-bold text-red-400 tabular-nums">{noCount}</p>
+          <p className="text-sm text-gray-400 font-medium">Rejected</p>
         </div>
       </div>
 
       {/* Progress message */}
-      <p className="mt-6 text-gray-400">
-        {approved ? 'Proceeding to team selection...' : 'Next leader will be proposed...'}
+      <p className={`text-center text-gray-400 transition-opacity duration-500 ${showCards ? 'opacity-100' : 'opacity-0'}`}>
+        {approved ? 'Proceeding to team selection...' : 'Crown passes to the next player...'}
       </p>
     </div>
   );
@@ -287,14 +444,12 @@ export function LeaderVoting({ game, players, currentPlayer, onVote }: LeaderVot
   // Loading state
   if (votesLoading) {
     return (
-      <div className="text-center">
-        <div className="flex items-center justify-center gap-2 text-gray-400">
-          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          <span>Loading vote status...</span>
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="relative">
+          <div className="w-16 h-16 rounded-full border-4 border-stone-700" />
+          <div className="absolute inset-0 w-16 h-16 rounded-full border-4 border-t-blue-500 animate-spin" />
         </div>
+        <p className="mt-4 text-gray-400 font-medium">Loading vote status...</p>
       </div>
     );
   }
@@ -302,60 +457,123 @@ export function LeaderVoting({ game, players, currentPlayer, onVote }: LeaderVot
   // Show results when voting is complete
   if (showResults && voteResults) {
     return (
-      <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">Vote for Leader</h2>
-        <p className="text-gray-400 mb-6">
-          <span className="text-blue-400 font-semibold">{leader?.display_name}</span> was proposed
-        </p>
+      <div className="max-w-lg mx-auto">
+        {/* Header with leader info */}
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-white mb-2">Leader Vote Complete</h2>
+          <p className="text-gray-400">
+            <span className="text-blue-400 font-semibold">{leader?.display_name}</span> was proposed
+          </p>
+        </div>
         <VoteResultsDisplay results={voteResults} />
       </div>
     );
   }
 
+  // Rejection warning level
+  const rejectionWarning = game.rejection_count >= 2 ? 'critical' : game.rejection_count >= 1 ? 'warning' : 'normal';
+
   return (
-    <div className="text-center">
-      <h2 className="text-2xl font-bold mb-2">Vote for Leader</h2>
-      <p className="text-gray-400 mb-2">
-        <span className="text-blue-400 font-semibold">{leader?.display_name}</span> is the proposed leader
-      </p>
-      <p className="text-sm text-gray-500 mb-6">
-        Rejections: <span className={game.rejection_count >= 2 ? 'text-red-400' : ''}>{game.rejection_count}/3</span>
-        {game.rejection_count === 2 && (
-          <span className="ml-2 text-red-400">(Next rejection = automatic evil win)</span>
-        )}
-      </p>
+    <div className="max-w-lg mx-auto">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-bold text-white mb-4">Vote for Leader</h2>
+        
+        {/* Leader card with crown */}
+        <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-amber-900/40 to-yellow-900/40 border-2 border-amber-500/50 rounded-2xl">
+          <span className="p-2 rounded-xl bg-amber-500/30">
+            <CrownIcon className="w-6 h-6 text-amber-400" />
+          </span>
+          <div className="text-left">
+            <p className="text-xs text-amber-400/80 uppercase tracking-wide font-medium">Proposed Leader</p>
+            <p className="text-xl font-bold text-amber-200">{leader?.display_name}</p>
+          </div>
+        </div>
+        
+        {/* Rejection counter */}
+        <div className={`
+          mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl transition-colors
+          ${rejectionWarning === 'critical' 
+            ? 'bg-red-900/40 border border-red-500/50' 
+            : rejectionWarning === 'warning'
+            ? 'bg-orange-900/40 border border-orange-500/50'
+            : 'bg-stone-800/50 border border-stone-600/50'
+          }
+        `}>
+          <span className={`text-sm font-medium ${
+            rejectionWarning === 'critical' ? 'text-red-400' :
+            rejectionWarning === 'warning' ? 'text-orange-400' : 'text-gray-400'
+          }`}>
+            Rejections: 
+          </span>
+          <div className="flex gap-1">
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className={`w-3 h-3 rounded-full transition-colors ${
+                  i < game.rejection_count
+                    ? rejectionWarning === 'critical' ? 'bg-red-500' : 'bg-orange-500'
+                    : 'bg-stone-600'
+                }`}
+              />
+            ))}
+          </div>
+          {game.rejection_count === 2 && (
+            <span className="text-xs text-red-400 font-medium ml-1 animate-pulse">
+              Final chance!
+            </span>
+          )}
+        </div>
+      </div>
 
-      {/* Show voting buttons or waiting message */}
-      {hasVoted || isComplete ? (
-        <WaitingMessage
-          voteCount={voteCount}
-          expectedCount={expectedCount}
-          hasVoted={hasVoted}
-          myVote={myVote}
-        />
-      ) : (
-        <VotingButtons
-          onApprove={handleApprove}
-          onReject={handleReject}
-          disabled={hasVoted}
-          isSubmitting={isSubmitting}
-        />
-      )}
-
-      {/* Vote progress indicator */}
-      {!showResults && (
-        <div className="mt-6">
-          <div className="w-full max-w-xs mx-auto bg-stone-700 rounded-full h-2">
-            <div
-              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(voteCount / expectedCount) * 100}%` }}
+      {/* Voting area */}
+      <div className="space-y-6">
+        {/* Show voting buttons or waiting message */}
+        {hasVoted || isComplete ? (
+          <WaitingMessage
+            voteCount={voteCount}
+            expectedCount={expectedCount}
+            hasVoted={hasVoted}
+            myVote={myVote}
+            players={players}
+            votes={votes}
+          />
+        ) : (
+          <div className="space-y-4">
+            <p className="text-center text-gray-300 mb-2">
+              Should this player lead the next mission?
+            </p>
+            <VotingButtons
+              onApprove={handleApprove}
+              onReject={handleReject}
+              disabled={hasVoted}
+              isSubmitting={isSubmitting}
             />
           </div>
-          <p className="text-xs text-gray-500 mt-2">
-            {voteCount} of {expectedCount} votes cast
-          </p>
-        </div>
-      )}
+        )}
+
+        {/* Vote progress indicator */}
+        {!showResults && (
+          <div className="mt-6">
+            <div className="relative w-full max-w-xs mx-auto">
+              <div className="h-3 bg-stone-700/50 rounded-full overflow-hidden border border-stone-600/50">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${(voteCount / expectedCount) * 100}%` }}
+                />
+              </div>
+              {/* Progress glow effect */}
+              <div
+                className="absolute top-0 left-0 h-3 bg-blue-400/20 rounded-full blur-sm transition-all duration-500"
+                style={{ width: `${(voteCount / expectedCount) * 100}%` }}
+              />
+            </div>
+            <p className="text-sm text-gray-500 mt-3 text-center tabular-nums">
+              <span className="text-blue-400 font-medium">{voteCount}</span> of <span className="font-medium">{expectedCount}</span> votes cast
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -453,7 +453,7 @@ describe('LeaderVoting', () => {
       checkCompletion: vi.fn(),
     });
 
-    render(
+    const { container } = render(
       <LeaderVoting
         game={game}
         players={players}
@@ -462,17 +462,22 @@ describe('LeaderVoting', () => {
       />
     );
 
-    // Shows vote count progress text
-    expect(screen.getByText(/2 of 5 votes cast/)).toBeTruthy();
+    // Text is split across multiple spans, so check for key parts
+    expect(screen.getByText('2')).toBeTruthy();
+    expect(screen.getByText('5')).toBeTruthy();
+    expect(screen.getByText(/votes cast/)).toBeTruthy();
+    // Check for progress bar with 40% width (2/5 = 40%)
+    const progressBar = container.querySelector('[style*="width: 40%"]');
+    expect(progressBar).toBeTruthy();
   });
 
-  it('shows rejection count', () => {
+  it('shows rejection count visually', () => {
     const game = createTestGame({ phase: 'voting_for_leader', rejection_count: 2 });
     const players = createTestPlayers(5);
     const currentPlayer = players[0];
     const onVote = vi.fn();
 
-    render(
+    const { container } = render(
       <LeaderVoting
         game={game}
         players={players}
@@ -481,7 +486,11 @@ describe('LeaderVoting', () => {
       />
     );
 
-    expect(screen.getByText('2/3')).toBeTruthy();
+    // Now uses visual indicator dots - check for the rejections label
+    expect(screen.getByText(/Rejections:/)).toBeTruthy();
+    // And 2 filled dots (bg-orange-500 or bg-red-500) plus 1 unfilled (bg-stone-600)
+    const filledDots = container.querySelectorAll('.bg-orange-500, .bg-red-500');
+    expect(filledDots.length).toBe(2);
   });
 
   it('shows warning at 2 rejections', () => {
@@ -499,7 +508,8 @@ describe('LeaderVoting', () => {
       />
     );
 
-    expect(screen.getByText(/Next rejection = automatic evil win/)).toBeTruthy();
+    // Text changed to "Final chance!" instead of "Next rejection = automatic evil win"
+    expect(screen.getByText(/Final chance/)).toBeTruthy();
   });
 
   it('displays current leader name', () => {
@@ -727,7 +737,8 @@ describe('MissionVoting', () => {
       />
     );
 
-    expect(screen.getByText(/Team members voting/)).toBeTruthy();
+    // Text changed to "Team members are voting..."
+    expect(screen.getByText(/Team members are voting/)).toBeTruthy();
   });
 
   it('shows hint that good players can only vote pass', () => {
@@ -749,7 +760,8 @@ describe('MissionVoting', () => {
       />
     );
 
-    expect(screen.getByText(/As a good team member, you can only vote Pass/)).toBeTruthy();
+    // Text changed to "As a loyal team member, you can only vote Pass"
+    expect(screen.getByText(/loyal team member/)).toBeTruthy();
   });
 
   it('calls onVote when clicking pass button', async () => {
