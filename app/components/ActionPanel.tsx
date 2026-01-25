@@ -15,6 +15,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { actionRegistry, getUsedActionIds } from '~/registry/ActionRegistry';
 import { characterRegistry } from '~/registry/CharacterRegistry';
+import { TargetSelector } from '~/components/TargetSelector';
 import type {
   Player,
   Game,
@@ -44,133 +45,11 @@ interface ActionPanelProps {
   onExecuteAction: (actionId: ActionId, targetIds: string[]) => Promise<ActionResult>;
 }
 
-interface TargetSelectorProps {
-  /** Action being executed */
-  action: ActionDefinition;
-  /** Available players to target */
-  players: Player[];
-  /** Current player (cannot target self for some actions) */
-  currentPlayerId: string;
-  /** Game context for validation */
-  ctx: GameContext;
-  /** Callback when targets are selected */
-  onSelect: (targetIds: string[]) => void;
-  /** Callback to cancel selection */
-  onCancel: () => void;
-}
-
 type PanelState =
   | { type: 'idle' }
   | { type: 'selecting'; action: ActionDefinition }
   | { type: 'executing'; action: ActionDefinition }
   | { type: 'result'; action: ActionDefinition; result: ActionResult };
-
-// =============================================================================
-// Target Selector Component
-// =============================================================================
-
-function TargetSelector({
-  action,
-  players,
-  currentPlayerId,
-  ctx,
-  onSelect,
-  onCancel,
-}: TargetSelectorProps) {
-  const [selectedTargets, setSelectedTargets] = useState<string[]>([]);
-
-  // Get eligible targets (alive players, excluding self for most actions)
-  const eligibleTargets = players.filter((p) => {
-    if (!p.is_alive) return false;
-    // Allow self-targeting only for certain actions (like protect)
-    if (p.id === currentPlayerId && action.id !== 'protect') return false;
-    return true;
-  });
-
-  const handleToggleTarget = (playerId: string) => {
-    setSelectedTargets((prev) => {
-      if (prev.includes(playerId)) {
-        return prev.filter((id) => id !== playerId);
-      }
-      // Check if we've reached max targets
-      if (prev.length >= action.maxTargets) {
-        // Replace the first target if at max
-        return [...prev.slice(1), playerId];
-      }
-      return [...prev, playerId];
-    });
-  };
-
-  const handleConfirm = () => {
-    // Validate target count
-    if (selectedTargets.length < action.minTargets) {
-      return;
-    }
-    onSelect(selectedTargets);
-  };
-
-  const canConfirm =
-    selectedTargets.length >= action.minTargets && selectedTargets.length <= action.maxTargets;
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium text-gray-300">Select Target{action.maxTargets > 1 ? 's' : ''}</h4>
-        <span className="text-xs text-gray-500">
-          {selectedTargets.length}/{action.minTargets === action.maxTargets ? action.maxTargets : `${action.minTargets}-${action.maxTargets}`}
-        </span>
-      </div>
-
-      {/* Player Grid */}
-      <div className="grid grid-cols-2 gap-2" role="group" aria-label="Select targets">
-        {eligibleTargets.map((player) => {
-          const isSelected = selectedTargets.includes(player.id);
-          return (
-            <button
-              key={player.id}
-              type="button"
-              onClick={() => handleToggleTarget(player.id)}
-              aria-pressed={isSelected}
-              className={`p-2 rounded-lg text-sm font-medium transition-all ${
-                isSelected
-                  ? 'bg-amber-600/30 border-2 border-amber-500 text-amber-300'
-                  : 'bg-stone-700 border-2 border-transparent text-gray-300 hover:bg-stone-600'
-              }`}
-            >
-              {player.display_name}
-              {player.id === currentPlayerId && (
-                <span className="text-xs text-gray-500 ml-1">(you)</span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex gap-2 pt-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="flex-1 py-2 px-3 rounded-lg bg-stone-700 text-gray-300 hover:bg-stone-600 transition-colors text-sm"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          onClick={handleConfirm}
-          disabled={!canConfirm}
-          className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-            canConfirm
-              ? 'bg-amber-600 text-white hover:bg-amber-500'
-              : 'bg-stone-700 text-gray-500 cursor-not-allowed'
-          }`}
-        >
-          Confirm
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // =============================================================================
 // Action Button Component
