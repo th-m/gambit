@@ -993,3 +993,19 @@
   - Mock getMissionSize from StateValidator to control team size requirements in TeamSelection tests
   - Test helper functions like createTestGame, createTestPlayer, createTestPlayers reduce test setup boilerplate
   - Component tests don't need to mock registries if testing presentation logic - mock the hooks that provide data to the component
+
+---
+## 2026-01-25 - ui-lobby-design
+- **What was implemented**: Enhanced lobby interface with improved visual design, skeleton loading states, and consistent styling
+- **Files changed**: 
+  - `app/components/Lobby.tsx` (updated - added skeleton loaders, gradient avatars, improved styling)
+- **Learnings:**
+  - Skeleton loaders should match the layout of actual content for smooth transitions
+  - Deterministic avatar colors based on player ID use simple hash: `id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length`
+  - Tailwind gradient patterns: `bg-gradient-to-br from-{color}-500 to-{color}-700` creates depth
+  - Animated pulsing indicator uses two overlapping spans: outer with `animate-ping opacity-75`, inner with solid color
+  - `isLoading` prop pattern allows parent to control loading state display
+  - Export both `LobbySkeleton` component (for standalone use) and internal `PlayerSkeleton` helper
+  - Button active states with `active:scale-[0.98]` provide tactile feedback on click
+  - Use `tabular-nums` class for numeric displays (player count) to prevent layout shifts
+  - "(you)" indicator for current user improves UX by helping users identify themselves in the list

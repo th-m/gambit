@@ -994,7 +994,7 @@
         "Loading states with spinners/skeletons",
         "Consistent with overall app theme"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "ui-game-board-design",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 86,
-    "completed_features": 64,
+    "completed_features": 65,
     "categories": {
       "functional": 68,
       "visual": 9,
