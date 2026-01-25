@@ -324,3 +324,239 @@ export const EVIL_CHARACTERS: readonly CharacterName[] = [
   'Saboteur',
   'Minion',
 ] as const;
+
+// =============================================================================
+// Action & Effect System Types
+// =============================================================================
+
+/**
+ * Action IDs for character special abilities.
+ */
+export type ActionId = 'assassinate' | 'rig_vote' | 'plant_beeper' | 'protect' | 'sabotage';
+
+/**
+ * Effect IDs for passive character effects.
+ */
+export type EffectId = 'appears_as_seer' | 'appears_as_good';
+
+/**
+ * Event types that can trigger effect hooks.
+ */
+export type GameEventType =
+  | 'game_start'
+  | 'round_start'
+  | 'round_end'
+  | 'phase_change'
+  | 'leader_approved'
+  | 'leader_rejected'
+  | 'team_selected'
+  | 'mission_success'
+  | 'mission_fail'
+  | 'vote_submitted'
+  | 'player_eliminated'
+  | 'good_wins'
+  | 'evil_wins';
+
+/**
+ * Context passed to actions and effects for game state access.
+ */
+export interface GameContext {
+  /** Current game state */
+  game: Game;
+  /** All players in the game */
+  players: Player[];
+  /** The player performing the action (if applicable) */
+  currentPlayer: Player | null;
+  /** Active modifiers for the current round */
+  modifiers: GameModifier[];
+  /** Active player statuses */
+  statuses: PlayerStatus[];
+}
+
+/**
+ * Result of validating an action or state change.
+ */
+export interface ValidationResult {
+  /** Whether the validation passed */
+  valid: boolean;
+  /** Error message if validation failed */
+  error?: string;
+}
+
+/**
+ * Result of executing an action.
+ */
+export interface ActionResult {
+  /** Whether the action succeeded */
+  success: boolean;
+  /** Human-readable message describing what happened */
+  message: string;
+  /** Whether the action ended the game */
+  gameEnded?: boolean;
+  /** Winning team if game ended */
+  winner?: Team;
+  /** Error message if action failed */
+  error?: string;
+}
+
+/**
+ * Result of processing votes.
+ */
+export interface VoteResult {
+  /** Whether the vote was recorded successfully */
+  success: boolean;
+  /** Whether all expected votes are now in */
+  allVotesIn: boolean;
+  /** The outcome ('approved', 'rejected', 'passed', 'failed') if all votes are in */
+  result?: 'approved' | 'rejected' | 'passed' | 'failed';
+  /** Vote counts */
+  tally?: {
+    yes?: number;
+    no?: number;
+    pass?: number;
+    fail?: number;
+  };
+  /** Error message if vote failed */
+  error?: string;
+}
+
+/**
+ * Target validation function signature.
+ */
+export type ValidateTargetsFn = (ctx: GameContext, targetIds: string[]) => ValidationResult;
+
+/**
+ * Action execution function signature.
+ */
+export type ExecuteActionFn = (ctx: GameContext, targetIds: string[]) => ActionResult | Promise<ActionResult>;
+
+/**
+ * Definition of a character action (special ability).
+ */
+export interface ActionDefinition {
+  /** Unique identifier for this action */
+  id: ActionId;
+  /** Human-readable action name */
+  name: string;
+  /** Description of what the action does */
+  description: string;
+  /** Phases in which this action can be used */
+  phases: GamePhase[];
+  /** Maximum number of times this action can be used (per game) */
+  maxUses: number;
+  /** Whether the player must be on the current mission team to use this action */
+  requiresOnTeam: boolean;
+  /** Minimum number of targets required */
+  minTargets: number;
+  /** Maximum number of targets allowed */
+  maxTargets: number;
+  /** Validate that the targets are valid for this action */
+  validateTargets: ValidateTargetsFn;
+  /** Execute the action */
+  execute: ExecuteActionFn;
+}
+
+/**
+ * Modifier definitions that effects can apply.
+ */
+export interface EffectModifier {
+  /** Type of perception modification */
+  type: 'appears_as_seer' | 'appears_as_good';
+  /** Description of what this modifier does */
+  description: string;
+}
+
+/**
+ * Event hook handler function signature.
+ */
+export type EventHookFn = (ctx: GameContext, eventData: Record<string, unknown>) => void | Promise<void>;
+
+/**
+ * Definition of a passive effect.
+ */
+export interface EffectDefinition {
+  /** Unique identifier for this effect */
+  id: EffectId;
+  /** Human-readable effect name */
+  name: string;
+  /** Description of what the effect does */
+  description: string;
+  /** Events that trigger this effect's hooks */
+  hooks: Partial<Record<GameEventType, EventHookFn>>;
+  /** Modifiers this effect provides (for perception changes) */
+  modifiers: EffectModifier[];
+}
+
+/**
+ * Information a character knows based on their role.
+ */
+export interface CharacterInfo {
+  /** Description of what this character knows */
+  description: string;
+  /** Player IDs this character knows about (e.g., evil players for Seer) */
+  knownPlayers?: string[];
+  /** Display labels for known players */
+  knownPlayerLabels?: Record<string, string>;
+}
+
+/**
+ * Info resolver function that computes character knowledge with effects applied.
+ */
+export type ResolveInfoFn = (ctx: GameContext) => CharacterInfo;
+
+/**
+ * Definition of a character.
+ */
+export interface CharacterDefinition {
+  /** Character name/identifier */
+  name: CharacterName;
+  /** Team alignment */
+  team: Team;
+  /** Flavor description of the character */
+  description: string;
+  /** Function to resolve what information this character knows */
+  info: ResolveInfoFn;
+  /** Action IDs available to this character */
+  actions: ActionId[];
+  /** Effect IDs active for this character */
+  effects: EffectId[];
+}
+
+// =============================================================================
+// Action & Effect Constants
+// =============================================================================
+
+/**
+ * All valid action IDs.
+ */
+export const ACTION_IDS: readonly ActionId[] = [
+  'assassinate',
+  'rig_vote',
+  'plant_beeper',
+  'protect',
+  'sabotage',
+] as const;
+
+/**
+ * All valid effect IDs.
+ */
+export const EFFECT_IDS: readonly EffectId[] = ['appears_as_seer', 'appears_as_good'] as const;
+
+/**
+ * All game event types.
+ */
+export const GAME_EVENT_TYPES: readonly GameEventType[] = [
+  'game_start',
+  'round_start',
+  'round_end',
+  'phase_change',
+  'leader_approved',
+  'leader_rejected',
+  'team_selected',
+  'mission_success',
+  'mission_fail',
+  'vote_submitted',
+  'player_eliminated',
+  'good_wins',
+  'evil_wins',
+] as const;
