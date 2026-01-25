@@ -11,6 +11,8 @@
 - **API route pattern**: Export `action` function for POST/PUT/DELETE, use `loader` for GET. Return `new Response(JSON.stringify(data), { status, headers })` for JSON responses
 - **Type guard pattern**: Use `isX(value: unknown): value is X` pattern with const arrays for validation
 - **Registry pattern**: Class-based registries in `app/registry/` with Map storage, export both class (for testing) and singleton instance (for production)
+- **React contexts location**: Context providers go in `app/contexts/` - export Provider component, useX hook, and optionally the Context for testing
+- **React component tests**: Use `@vitest-environment jsdom` annotation at file top; React Router plugin is disabled during tests via vite config
 
 ---
 ## 2026-01-25 - types-game-core
@@ -448,3 +450,62 @@
   - Map validation error messages to HTTP status codes: "Only the current leader" → 403, other validation errors → 400
   - Route updates two game fields atomically: `selected_team` and `phase` (to 'mission_voting')
   - Validate request body structure (teamIds is array, all items are strings) before passing to StateValidator
+
+---
+## 2026-01-25 - api-games-action
+- **What was implemented**: POST /api/games/:gameId/action endpoint for executing character special abilities
+- **Files changed**: 
+  - `app/routes/api.games.$gameId.action.tsx` (created)
+- **Learnings:**
+  - ActionProcessor.executeAction handles all complex validation (game exists, player in game, player alive, action exists, phase, use limits, targets) - route just delegates
+  - Use `isActionId` type guard to validate actionId from request body against valid ActionId union type
+  - Route validates request structure (actionId exists, targetIds is array of strings) before passing to processor
+  - ActionResult interface from types/game.ts matches the API response schema - can return directly from processor
+  - Error mapping: 403 for "player not in game" (authorization), 400 for invalid action/targets (bad request), 404 for game not found
+
+---
+## 2026-01-25 - test-api-routes
+- **What was implemented**: Comprehensive integration tests for all API routes (43 tests)
+- **Files changed**: 
+  - `app/routes/api.routes.integration.test.ts` (created - 43 integration tests)
+- **Learnings:**
+  - React Router 7's `ActionFunctionArgs` requires an `unstable_pattern` property - create a helper function `createActionArgs(request, params)` to add it
+  - Mock Supabase auth by using `vi.mock('~/lib/supabase/server')` with a function that checks for Authorization header
+  - Use custom header (`X-Test-User-Id`) to control which user is authenticated in tests for multi-user scenarios
+  - Singleton services (gameService, voteProcessor, actionProcessor) need their internal Maps cleared between tests using type casting: `(service as any).games.clear()`
+  - When testing error messages, use `.toLowerCase()` or match partial strings to avoid case sensitivity issues
+  - Action routes must register both actions (ActionRegistry) and handlers (ActionProcessor) before testing
+  - Complete flow tests (voting rounds, win conditions) require setting up game state with specific characters, teams, and phases
+  - Test authentication requirement on every route by passing `{ authenticated: false }` to createRequest helper
+
+---
+## 2026-01-25 - context-game-flow
+- **What was implemented**: GameFlowContext for client-side game state management with real-time subscriptions
+- **Files changed**: 
+  - `app/contexts/GameFlowContext.tsx` (created)
+- **Learnings:**
+  - Context folder created at `app/contexts/` for React context providers
+  - GameFlowContext combines state management with Supabase real-time subscriptions in one provider
+  - Use `useRef` to store Supabase client and channels to prevent subscription recreation on re-renders
+  - Channel cleanup via `supabase.removeChannel(channel)` in useEffect cleanup function
+  - API methods wrapped in `useCallback` with `gameId` dependency to prevent unnecessary recreations
+  - Support optional `initialGame` and `initialPlayers` props for SSR/loader hydration
+  - Build `GameContext` (ctx) from current state: game, players, currentPlayer, modifiers (filtered by round), statuses
+  - Use separate channels per table (games, players, game_actions, player_statuses) with unique names
+  - Player list refetched on any player change to maintain correct seat_order sorting
+
+---
+## 2026-01-25 - test-context-game-flow
+- **What was implemented**: Unit tests for GameFlowContext (31 tests)
+- **Files changed**: 
+  - `app/contexts/GameFlowContext.test.tsx` (created - 31 unit tests)
+  - `vite.config.ts` (updated - disable React Router plugin during tests)
+- **Learnings:**
+  - React component tests need `@vitest-environment jsdom` annotation at top of file
+  - React Router Vite plugin conflicts with jsdom tests - disable via `mode !== "test"` check in vite config
+  - Mock Supabase client channels with factory function that tracks handlers and provides `_trigger()` method for simulating events
+  - Import the component being tested AFTER vi.mock() calls to ensure hoisting works correctly
+  - Test React contexts by creating consumer components that render context values to DOM for assertions
+  - Test API methods by providing `onResult` callback to consumer components that capture return values
+  - Async state update warnings (act(...) warnings) in tests are acceptable for these tests - they test the interface, not the exact timing
+  - Mock fetch globally via `global.fetch = mockFetch` for API method testing

@@ -568,7 +568,7 @@
         "Returns 400 for invalid action/targets",
         "Returns 403 for unauthorized action"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-api-routes",
@@ -585,7 +585,7 @@
         "Test error responses for all failure cases",
         "Test authentication required for all routes"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "context-game-flow",
@@ -602,7 +602,7 @@
         "Updates state on real-time events",
         "Cleans up subscriptions on unmount"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-context-game-flow",
@@ -616,7 +616,7 @@
         "Test API methods call correct endpoints",
         "Test error handling for failed API calls"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "hook-game-subscription",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 31,
+    "completed_features": 35,
     "categories": {
       "functional": 68,
       "visual": 9,
