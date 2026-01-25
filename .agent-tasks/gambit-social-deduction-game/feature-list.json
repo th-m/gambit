@@ -1124,7 +1124,7 @@
         "Mission votes never attributed to specific players",
         "Supabase RLS policies enforce access control"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "security-rate-limiting",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 86,
-    "completed_features": 60,
+    "completed_features": 61,
     "categories": {
       "functional": 68,
       "visual": 9,

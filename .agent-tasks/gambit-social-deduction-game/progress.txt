@@ -906,3 +906,22 @@
   - formatEndReason helper provides user-friendly messages for all EndReason values
   - sortPlayersByTeam groups players for reveal section (good first, then evil)
   - Personal result shows if current player was on winning team - adds personal engagement
+
+---
+## 2026-01-25 - security-data-privacy
+- **What was implemented**: Data privacy utilities to filter sensitive player data based on viewer's role
+- **Files changed**: 
+  - `app/utils/dataPrivacy.ts` (created - data filtering utilities)
+  - `app/utils/dataPrivacy.test.ts` (created - 23 unit tests)
+  - `app/effects/index.ts` (updated - fixed ES module imports)
+- **Learnings:**
+  - Data privacy layer should live in `app/utils/` as utility functions, not integrated into services
+  - `filterPlayersForViewer` returns `PublicPlayer[]` with character/team set to null when hidden
+  - Seer visibility excludes Saboteur via `appears_as_good` effect check through CharacterRegistry
+  - Oracle sees Seer candidates including Phantom via `appears_as_seer` effect check
+  - Evil team members see each other's team but not specific characters
+  - Vote attribution rules: mission votes NEVER show player_id, leader votes show after all votes in
+  - `getVoteTally` provides anonymous vote counts for UI display
+  - `shouldRevealAllData` returns true only when game.status === 'finished'
+  - Effects index.ts needed to use ES module imports instead of CommonJS require for test compatibility
+  - Note: Supabase RLS policies are a separate database concern - utilities provide the filtering logic
