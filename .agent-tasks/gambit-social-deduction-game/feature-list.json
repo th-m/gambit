@@ -1306,7 +1306,7 @@
         "Indexes created as specified in technical plan",
         "RLS policies created for each table"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "db-realtime-config",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 86,
-    "completed_features": 62,
+    "completed_features": 63,
     "categories": {
       "functional": 68,
       "visual": 9,

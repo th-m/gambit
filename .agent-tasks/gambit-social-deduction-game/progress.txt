@@ -941,3 +941,22 @@
   - RLS policy tests are skipped (`it.skip`) - they require real Supabase connection, not unit testable
   - Additional authorization checks: good players can't vote fail, dead players can't act, only host can start, only leader can select team
   - Impersonation prevention: routes ignore any `userId`/`playerId`/`hostId` in request body, always use authenticated user
+
+---
+## 2026-01-25 - db-migrations
+- **What was implemented**: Supabase database migrations for all game tables
+- **Files changed**: 
+  - `supabase/migrations/20260125000000_create_game_tables.sql` (created - 354 lines)
+- **Learnings:**
+  - Supabase migrations folder created at `supabase/migrations/` following standard Supabase structure
+  - Migration naming convention: `YYYYMMDDHHMMSS_description.sql` for chronological ordering
+  - All 6 tables created: games, players, game_actions, game_modifiers, player_statuses, game_logs
+  - Use CHECK constraints for enum-like columns (status, phase, team, character, action_type, etc.)
+  - JSONB type used for metadata columns (more efficient than JSON for querying)
+  - UUID[] array type for selected_team and target_ids columns
+  - Composite indexes match technical plan: (game_id, user_id), (game_id, round, phase), (game_id, player_id, status_type)
+  - RLS enabled on all tables with policies for: SELECT, INSERT, UPDATE, DELETE
+  - RLS policy pattern: check if user exists in players table for same game_id, or is game host
+  - Service role bypasses RLS by default in Supabase - server-side operations have full access
+  - REFERENCES with ON DELETE CASCADE ensures cleanup when parent records are deleted
+  - COMMENT ON statements add documentation visible in Supabase dashboard
