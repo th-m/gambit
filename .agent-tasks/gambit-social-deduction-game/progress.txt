@@ -246,3 +246,16 @@
   - `createTestAction` helper simplifies ActionDefinition creation with sensible defaults (phases, targets, validation)
   - Test both success and error paths for validation: game not found, player not found, player not in game, player dead, action not registered
   - Action handlers receive full `GameContext`, `targetIds[]`, and the `processor` instance for calling helper methods
+
+---
+## 2026-01-25 - service-state-validator
+- **What was implemented**: StateValidator service for game state transition validation
+- **Files changed**: 
+  - `app/services/StateValidator.ts` (created)
+- **Learnings:**
+  - StateValidator is stateless - only needs GameService dependency for data access
+  - Leader lookup uses crown_index with alive players sorted by seat_order (modulo for wraparound)
+  - getMissionSize is duplicated between VoteProcessor and StateValidator - consider extracting to shared util
+  - validateJoinGame returns valid:true even when player already in game (graceful handling pattern)
+  - Export constants (MIN_PLAYERS, MAX_PLAYERS) for use in other services and tests
+  - validateLeaveGame added as additional validation not in original spec (follows same pattern)

@@ -287,7 +287,7 @@
         "Team size matches round requirements from technical plan",
         "Cannot select eliminated players"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-service-state-validator",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 17,
+    "completed_features": 18,
     "categories": {
       "functional": 68,
       "visual": 9,
