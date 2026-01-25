@@ -17,7 +17,7 @@
         "GamePhase enum with all phases (lobby, voting_for_leader, selecting_team, mission_voting, resolution, assassination)",
         "Types exported from app/types/game.ts"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "types-actions-effects",
@@ -33,7 +33,7 @@
         "ValidationResult interface with valid and error",
         "GameContext type for passing game state to registries"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-types-validation",
@@ -47,7 +47,7 @@
         "Tests verify type guards correctly identify valid/invalid data",
         "Tests cover edge cases (null, undefined, wrong types)"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "registry-action",
@@ -63,7 +63,7 @@
         "execute(actionId, ctx, targets) runs action handler",
         "Registry is singleton or injectable"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-registry-action",
@@ -80,7 +80,7 @@
         "Test checkConditions validates use limits",
         "Test execute calls handler with correct parameters"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "registry-effect",
@@ -94,7 +94,7 @@
         "triggerHooks(event, ctx, activeEffects, eventData) fires event handlers",
         "Effects can modify perception (appears_as_seer, appears_as_good)"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-registry-effect",
@@ -108,7 +108,7 @@
         "Test appears_as_seer effect modifies Oracle perception",
         "Test appears_as_good effect modifies Seer perception"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "registry-character",
@@ -123,7 +123,7 @@
         "resolveInfo(ctx) returns character info with effects applied",
         "Characters from technical plan registered (Seer, Oracle, Guardian, Tracker, Villager, Assassin, Fixer, Phantom, Saboteur, Minion)"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-registry-character",
@@ -138,7 +138,7 @@
         "Test resolveInfo for Oracle shows Phantom as Seer",
         "Test resolveInfo for Seer excludes Saboteur from evil list"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "registry-eventbus",
@@ -151,7 +151,7 @@
         "useMiddleware(middleware) adds event middleware",
         "Supports all events: game_start, round_start, round_end, phase_change, leader_approved, leader_rejected, team_selected, mission_success, mission_fail, vote_submitted, player_eliminated, good_wins, evil_wins"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-registry-eventbus",
@@ -165,7 +165,7 @@
         "Test middleware can intercept events",
         "Test multiple handlers for same event all called"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "service-game-crud",
@@ -184,7 +184,7 @@
         "updatePlayer(playerId, updates) updates player state",
         "Game key is 6-8 alphanumeric characters"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-service-game",
@@ -202,7 +202,7 @@
         "Test updateGame returns updated entity",
         "Test updatePlayer returns updated entity"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "service-vote-processor",
@@ -220,7 +220,7 @@
         "cleanupRound removes expired statuses/modifiers",
         "Handles 3-rejection auto-fail rule"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-service-vote-processor",
@@ -239,7 +239,7 @@
         "Test leader vote majority calculation",
         "Test mission vote pass/fail determination"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "service-action-processor",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 0,
+    "completed_features": 15,
     "categories": {
       "functional": 68,
       "visual": 9,

@@ -1,0 +1,218 @@
+## Codebase Patterns
+
+- **Services location**: Business logic services go in `app/services/` with class + singleton pattern (same as registries)
+- **TypeScript types location**: Core game types go in `app/types/game.ts`, Supabase generated types in `app/types/supabase.ts`
+- **Validation command**: Use `npm run validate` to run both typecheck and tests
+- **Type unions over enums**: Use string literal union types (e.g., `type GamePhase = 'lobby' | ...`) rather than TypeScript enums for better tree-shaking and JSON compatibility
+- **Constants alongside types**: Export const arrays (e.g., `GAME_PHASES`) alongside type unions for runtime validation and iteration
+- **Testing framework**: Vitest configured in `vite.config.ts`, tests go in `app/**/*.test.ts`
+- **Type guard pattern**: Use `isX(value: unknown): value is X` pattern with const arrays for validation
+- **Registry pattern**: Class-based registries in `app/registry/` with Map storage, export both class (for testing) and singleton instance (for production)
+
+---
+## 2026-01-25 - types-game-core
+- **What was implemented**: Core TypeScript type definitions for all game entities
+- **Files changed**: 
+  - `app/types/game.ts` (created)
+- **Learnings:**
+  - Existing Supabase types in `app/types/supabase.ts` use a different schema than the technical plan; new types need to align with the technical plan's database schema
+  - Use `Record<string, unknown>` for JSON metadata fields to allow flexibility while maintaining type safety
+  - Include helper types like `NewGame`, `GameUpdate` for common operations
+
+---
+## 2026-01-25 - types-actions-effects
+- **What was implemented**: TypeScript types for the action and effect registry system
+- **Files changed**: 
+  - `app/types/game.ts` (updated - added action/effect types)
+- **Learnings:**
+  - Function types (`ValidateTargetsFn`, `ExecuteActionFn`, `ResolveInfoFn`, `EventHookFn`) are cleaner as type aliases rather than inline signatures
+  - `ActionDefinition` includes both sync and async execute via `ActionResult | Promise<ActionResult>`
+  - Effect modifiers focus on perception changes (`appears_as_seer`, `appears_as_good`) which are core to the game's deduction mechanics
+  - `GameContext` consolidates all state needed for registry operations (game, players, currentPlayer, modifiers, statuses)
+
+---
+## 2026-01-25 - test-types-validation
+- **What was implemented**: Type guard functions and unit tests for all type definitions
+- **Files changed**: 
+  - `app/types/game.ts` (updated - added type guards and constants)
+  - `app/types/game.test.ts` (created - 37 unit tests)
+  - `package.json` (added test and validate scripts)
+  - `vite.config.ts` (added Vitest configuration)
+- **Learnings:**
+  - Vitest integrates seamlessly with existing Vite config - just add `test` property
+  - Type guards use `(CONST_ARRAY as readonly string[]).includes(value)` pattern to avoid TypeScript narrowing issues
+  - Tests should cover: valid values from const arrays, invalid strings, case sensitivity, null, undefined, and wrong primitive types (number, boolean, object, array)
+  - Added `ACTION_TYPES`, `LEADER_VOTES`, `MISSION_VOTES` const arrays that were missing for runtime validation
+
+---
+## 2026-01-25 - registry-action
+- **What was implemented**: ActionRegistry class for managing character action definitions
+- **Files changed**: 
+  - `app/registry/ActionRegistry.ts` (created)
+- **Learnings:**
+  - Registry folder created at `app/registry/` for all registry classes
+  - Class-based registry allows both singleton pattern (exported instance) and injectable instances (for testing)
+  - `getAvailableActions` filters by: current phase, character's action list, and use limits
+  - `checkConditions` validates: phase, use limits, and team requirements before execution
+  - `execute` is async to support both sync and async action handlers
+  - Helper functions `countActionUses` and `getUsedActionIds` extract usage data from GameAction[] array
+  - Target validation is two-step: count check first, then action-specific validateTargets function
+
+---
+## 2026-01-25 - test-registry-action
+- **What was implemented**: Comprehensive unit tests for ActionRegistry class
+- **Files changed**: 
+  - `app/registry/ActionRegistry.test.ts` (created - 41 unit tests)
+- **Learnings:**
+  - Create helper factory functions (`createTestGame`, `createTestPlayer`, `createTestContext`, `createTestAction`) for cleaner test setup
+  - Use `vi.fn()` from Vitest for mocking function calls and verifying invocations
+  - Test both success and failure paths for execute() - validate conditions, target counts, target validation, and async handling
+  - When testing with ActionId arrays, explicitly type them as `ActionId[]` to avoid TypeScript inference issues with string literals
+  - Test registry's `clear()` method for resetting state between test scenarios
+  - Helper functions (`countActionUses`, `getUsedActionIds`) should be tested separately from the main registry class
+
+---
+## 2026-01-25 - registry-effect
+- **What was implemented**: EffectRegistry class for managing passive character effects
+- **Files changed**: 
+  - `app/registry/EffectRegistry.ts` (created)
+- **Learnings:**
+  - EffectRegistry is simpler than ActionRegistry - effects are passive, not executed like actions
+  - `getModifiers` and `getAllModifiers` provide access to perception-changing effects (appears_as_seer, appears_as_good)
+  - `hasModifier` helper simplifies checking if a perception modifier is active
+  - `triggerHooks` handles both sync and async hook handlers via Promise.all pattern
+  - No condition checking needed for effects - they're always active when the character has them
+  - `getEffectsWithHook` useful for determining which effects respond to specific game events
+
+---
+## 2026-01-25 - test-registry-effect
+- **What was implemented**: Comprehensive unit tests for EffectRegistry class (41 tests)
+- **Files changed**: 
+  - `app/registry/EffectRegistry.test.ts` (created - 41 unit tests)
+- **Learnings:**
+  - Reuse helper factory functions from ActionRegistry tests (`createTestGame`, `createTestPlayer`, `createTestContext`)
+  - Create `createTestEffect` helper for consistent EffectDefinition mocking
+  - Test async hooks with `mockImplementation(async () => ...)` and verify completion with Promise timing
+  - Perception effect tests should verify: modifier presence, hasModifier queries, and absence of cross-effect contamination
+  - Test that `appears_as_seer` does NOT affect Seer perception (only Oracle)
+  - Test that `appears_as_good` does NOT affect other evil players' knowledge (only Seer)
+  - Integration tests helpful for showing how modifiers are queried during info resolution
+
+---
+## 2026-01-25 - registry-character
+- **What was implemented**: CharacterRegistry class with all 10 character definitions and info resolution
+- **Files changed**: 
+  - `app/registry/CharacterRegistry.ts` (created)
+- **Learnings:**
+  - CharacterRegistry follows same singleton + class pattern as other registries
+  - `resolveInfo(ctx)` delegates to each character's `info` function which takes GameContext and returns CharacterInfo
+  - Info resolution uses EffectRegistry to check for perception modifiers:
+    - `getVisibleEvilPlayers` excludes players with `appears_as_good` effect (Saboteur hidden from Seer)
+    - `getSeerCandidates` includes real Seer + players with `appears_as_seer` effect (Phantom confuses Oracle)
+  - `buildPlayerLabels` helper creates label mappings for UI display
+  - Evil team characters all share similar info logic (knowing other evil players)
+  - Character definitions include: name, team, description, info resolver, actions array, effects array
+  - Export `registerAllCharacters()` function for app initialization
+  - Export individual character definitions for unit testing
+
+---
+## 2026-01-25 - test-registry-character
+- **What was implemented**: Comprehensive unit tests for CharacterRegistry class (39 tests)
+- **Files changed**: 
+  - `app/registry/CharacterRegistry.test.ts` (created - 39 unit tests)
+- **Learnings:**
+  - Tests require registering both characters AND effects; `registerAllCharacters()` populates characterRegistry, but `registerPerceptionEffects()` helper needed for effectRegistry
+  - Clear BOTH singleton registries in beforeEach/afterEach to prevent test pollution
+  - Test info resolution requires building a realistic player context with multiple players of different teams
+  - Oracle edge cases: when only Seer present, label is "Seer"; when Phantom also present, labels become "Seer?" to indicate uncertainty
+  - Test all evil characters share the same info pattern (knowing other evil players) - parameterized test verifies this efficiently
+  - Export individual character definitions (seerDefinition, etc.) enables testing character properties directly without needing to look them up from registry
+
+---
+## 2026-01-25 - registry-eventbus
+- **What was implemented**: EventBus class for game event pub/sub system
+- **Files changed**: 
+  - `app/registry/EventBus.ts` (created)
+- **Learnings:**
+  - EventBus uses `Set<EventHandler>` per event type for automatic deduplication of handlers
+  - `on()` returns an unsubscribe function (closure pattern) for easy cleanup
+  - Middleware pattern uses chained async functions built from end to beginning
+  - `emit()` supports both sync and async handlers via Promise.all
+  - Export additional types (`EventHandler`, `Unsubscribe`, `EventMiddleware`) for consumers
+  - Helper methods `getHandlerCount()` and `getActiveEvents()` useful for testing and debugging
+  - `off(event)` removes all handlers for an event; `clear()` removes all handlers and middleware
+
+---
+## 2026-01-25 - test-registry-eventbus
+- **What was implemented**: Comprehensive unit tests for EventBus class (48 tests)
+- **Files changed**: 
+  - `app/registry/EventBus.test.ts` (created - 48 unit tests)
+- **Learnings:**
+  - Test middleware chain execution order with call order arrays - middleware wraps in onion pattern (m1-start, m2-start, handler, m2-end, m1-end)
+  - Test middleware blocking by not calling `next()` - handler should not be invoked
+  - Test middleware data modification by mutating the eventData object before calling `next()`
+  - Use `it.each()` from Vitest to test all 13 GameEventType values systematically
+  - Test idempotency of unsubscribe function (calling multiple times should not error)
+  - Test both singleton instance (`eventBus`) and class constructor (`new EventBus()`) for isolation
+  - `clearMiddleware()` useful for testing handler behavior without middleware interference
+
+---
+## 2026-01-25 - service-game-crud
+- **What was implemented**: GameService class for game and player CRUD operations
+- **Files changed**: 
+  - `app/services/GameService.ts` (created)
+- **Learnings:**
+  - Services go in `app/services/` directory, following same pattern as registries
+  - In-memory Map storage works well for development; can be swapped for Supabase queries later
+  - `generateGameKey()` uses uppercase alphanumeric chars excluding ambiguous ones (I, O, 0, 1) for readability
+  - Game key index (Map<gameKey, gameId>) enables O(1) lookup by shareable code
+  - `addPlayer` handles duplicate joins gracefully by returning existing player instead of throwing
+  - Players sorted by `seat_order` (null values sorted to end) for consistent ordering
+  - UUID generation can be inline until production needs crypto.randomUUID()
+  - Export both class (for testing with fresh instances) and singleton (for production)
+
+---
+## 2026-01-25 - test-service-game
+- **What was implemented**: Comprehensive unit tests for GameService class (47 tests)
+- **Files changed**: 
+  - `app/services/GameService.test.ts` (created - 47 unit tests)
+- **Learnings:**
+  - Test `generateGameKey` separately from service class - it's an exported utility
+  - Use regex patterns to validate UUID format: `/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i`
+  - Test game key case-insensitivity (service should handle lowercase input)
+  - Test error paths with `expect(() => ...).toThrow('message')` pattern
+  - `addPlayer` graceful duplicate handling is important - returns existing player rather than throwing
+  - Test seat_order sorting with explicit order assignment to verify sort behavior
+  - Test game key index update when `game_key` changes in updateGame
+  - Service tests don't need helper factory functions like registry tests - work directly with service methods
+
+---
+## 2026-01-25 - service-vote-processor
+- **What was implemented**: VoteProcessor service for handling leader and mission vote submission and resolution
+- **Files changed**: 
+  - `app/services/VoteProcessor.ts` (created)
+- **Learnings:**
+  - VoteProcessor maintains its own storage for GameAction, GameModifier, and PlayerStatus entities (separate from GameService)
+  - GameService dependency is injected via constructor for testability - defaults to singleton but accepts custom instance
+  - Vote recording uses action_type 'vote_yes'/'vote_no' for leader votes, 'vote_pass'/'vote_fail' for mission votes
+  - Mission size lookup table (MISSION_SIZES) is keyed by player count then round number for O(1) lookup
+  - Round 4 with 7+ players requires 2 fail votes - extracted to `getRequiredFailVotes` helper
+  - 3-rejection auto-fail awards evil a victory and advances the round (not just the crown)
+  - Good winning 3 missions triggers assassination phase if Assassin is alive, otherwise immediate good victory
+  - Modifiers like `force_pass` and `extra_fail` are checked during mission result processing
+  - Beeper vibration is triggered before state update to ensure statuses are still valid
+  - `cleanupRound` removes expired statuses (by expires_at_round) and modifiers (by round number)
+
+---
+## 2026-01-25 - test-service-vote-processor
+- **What was implemented**: Comprehensive unit tests for VoteProcessor class (48 tests)
+- **Files changed**: 
+  - `app/services/VoteProcessor.test.ts` (created - 48 unit tests)
+- **Learnings:**
+  - GameService's `addPlayer` checks `status !== 'lobby'` - must add players BEFORE updating game status to 'playing'
+  - Test helper functions should create players first, then update game status/phase
+  - When testing character-dependent scenarios (like "Assassin is dead"), remember setup may create MULTIPLE players with the same character - use `filter` instead of `find` to handle all instances
+  - The `getMissionSize` and `getRequiredFailVotes` helper functions are exported and should be tested independently
+  - Test both modifiers (`force_pass`, `extra_fail`) and their effects on mission outcomes
+  - Leader vote approval requires strict majority (ties go to rejection)
+  - Verify the full chain: vote submission → tally → result processing → state update
