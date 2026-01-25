@@ -694,3 +694,34 @@
   - Export sub-components (ScoreBoard, CharacterInfoPanel, ActionPanel, PlayerList) for potential reuse elsewhere
   - Vibration listener placeholder added in useEffect - will integrate with useVibration hook when implemented
   - Phase components remain in the page file since they use useGameFlow() context methods (submitLeaderVote, selectTeam, etc.)
+
+---
+## 2026-01-25 - component-leader-voting
+- **What was implemented**: Full LeaderVoting component with real-time vote tracking and results display
+- **Files changed**: 
+  - `app/components/LeaderVoting.tsx` (created - full voting UI component)
+  - `app/routes/games.$game.play.tsx` (updated - imports and uses LeaderVoting component)
+- **Learnings:**
+  - Component uses useVoteSubscription for real-time vote tracking and useVoteCompletion for detecting when all votes are in
+  - Double-click prevention uses ref with timestamp comparison (CLICK_DEBOUNCE_MS = 500) - cleaner than debouncing callbacks
+  - Type alignment: component's `onVote` prop must match context's `submitLeaderVote` return type (`Promise<VoteResult>`, not `Promise<void>`)
+  - Local state (`hasVoted`, `myVote`) provides immediate UI feedback while subscription state handles real-time updates from other players
+  - Vote results are calculated client-side from the vote map when completion is detected via useVoteCompletion's `onComplete` callback
+  - Reset state when `game.current_round` or `game.rejection_count` changes to handle phase transitions correctly
+  - Sub-components (VotingButtons, WaitingMessage, VoteResultsDisplay) keep main component clean and improve readability
+
+---
+## 2026-01-25 - component-team-selection
+- **What was implemented**: TeamSelection component for leader to select mission team members
+- **Files changed**: 
+  - `app/components/TeamSelection.tsx` (created - full team selection UI)
+  - `app/routes/games.$game.play.tsx` (updated - imports and uses TeamSelection component)
+- **Learnings:**
+  - Component uses `getMissionSize` from StateValidator to determine required team size based on player count and round
+  - Selection state managed locally with useState, synced to parent via `onSelectTeam` callback
+  - `canSelect` prop pattern allows disabling selection during submission without unmounting component
+  - Leader calculation uses same pattern as GameBoard: filter alive players, sort by seat_order, use crown_index % alivePlayers.length
+  - WaitingView sub-component shows non-leaders the current selection progress with player names
+  - PlayerGrid uses aria-pressed for accessibility on toggle buttons, role="group" for screen reader grouping
+  - Double-click prevention via ref timestamp (CLICK_DEBOUNCE_MS) pattern, consistent with LeaderVoting component
+  - Visual feedback: selected players have blue background/border, checkmark badge, and opacity changes for limit states

@@ -808,7 +808,7 @@
         "Handles rapid double-click prevention",
         "Triggers vote processing on completion"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "component-team-selection",
@@ -825,7 +825,7 @@
         "Confirm button disabled until correct count",
         "Non-leaders see waiting message with current selection"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "component-mission-voting",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 86,
-    "completed_features": 48,
+    "completed_features": 49,
     "categories": {
       "functional": 68,
       "visual": 9,
