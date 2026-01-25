@@ -509,3 +509,19 @@
   - Test API methods by providing `onResult` callback to consumer components that capture return values
   - Async state update warnings (act(...) warnings) in tests are acceptable for these tests - they test the interface, not the exact timing
   - Mock fetch globally via `global.fetch = mockFetch` for API method testing
+
+---
+## 2026-01-25 - hook-game-subscription
+- **What was implemented**: Standalone useGameSubscription hook for real-time game state subscriptions
+- **Files changed**: 
+  - `app/hooks/useGameSubscription.ts` (created)
+- **Learnings:**
+  - Hooks folder created at `app/hooks/` for custom React hooks
+  - Hook extracts subscription logic from GameFlowContext for reusability - can be used independently or as part of larger contexts
+  - Returns `{ game, players, actions, isLoading, error, refresh }` - minimal interface for game state access
+  - Handles all three event types (INSERT, UPDATE, DELETE) for each table subscription
+  - For INSERT events on players, refetch all players to maintain correct seat_order sorting
+  - For UPDATE events, use functional setState with map to replace the specific record
+  - For DELETE events, filter out the removed record by id
+  - Channel names must be unique per subscription to avoid conflicts - use pattern `game-sub-${gameId}`, `game-sub-players-${gameId}`, etc.
+  - Supports SSR hydration via `initialGame`, `initialPlayers`, `initialActions` options

@@ -633,7 +633,7 @@
         "Updates state on INSERT/UPDATE/DELETE events",
         "Unsubscribes on unmount"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "hook-vote-subscription",
