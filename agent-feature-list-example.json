@@ -1,0 +1,129 @@
+
+
+{
+  "task_name": "example-task",
+  "description": "A comprehensive example showing how to structure features",
+  "created": "2024-01-15 10:00",
+  "features": [
+    {
+      "id": "auth-login-form",
+      "category": "functional",
+      "priority": 1,
+      "description": "User can log in with email and password",
+      "acceptance_criteria": [
+        "Login form displays email and password fields",
+        "Form validates email format before submission",
+        "Form validates password is not empty",
+        "Successful login redirects to dashboard",
+        "Failed login shows error message",
+        "Loading state shown during authentication"
+      ],
+      "passes": false
+    },
+    {
+      "id": "auth-logout",
+      "category": "functional",
+      "priority": 1,
+      "description": "User can log out from any page",
+      "acceptance_criteria": [
+        "Logout button visible in header when authenticated",
+        "Clicking logout clears session",
+        "User redirected to login page after logout",
+        "Protected routes inaccessible after logout"
+      ],
+      "passes": false
+    },
+    {
+      "id": "ui-responsive-layout",
+      "category": "visual",
+      "priority": 2,
+      "description": "Application layout is responsive across device sizes",
+      "acceptance_criteria": [
+        "Layout adapts to mobile viewport (< 768px)",
+        "Layout adapts to tablet viewport (768px - 1024px)",
+        "Layout works on desktop viewport (> 1024px)",
+        "Navigation collapses to hamburger menu on mobile",
+        "No horizontal scrolling on any viewport"
+      ],
+      "passes": false
+    },
+    {
+      "id": "ui-dark-mode",
+      "category": "visual",
+      "priority": 3,
+      "description": "User can toggle between light and dark themes",
+      "acceptance_criteria": [
+        "Theme toggle visible in settings or header",
+        "Dark mode applies to all components",
+        "Theme preference persists across sessions",
+        "No flash of wrong theme on page load",
+        "All text remains readable in both themes"
+      ],
+      "passes": false
+    },
+    {
+      "id": "perf-lazy-loading",
+      "category": "performance",
+      "priority": 2,
+      "description": "Routes are lazy loaded to reduce initial bundle size",
+      "acceptance_criteria": [
+        "Each main route is code-split",
+        "Loading indicator shown during route transitions",
+        "Initial bundle size under 200KB (gzipped)",
+        "Route chunks load in under 500ms on 3G"
+      ],
+      "passes": false
+    },
+    {
+      "id": "security-csrf-protection",
+      "category": "security",
+      "priority": 1,
+      "description": "All mutations are protected against CSRF attacks",
+      "acceptance_criteria": [
+        "CSRF token included in all POST/PUT/DELETE requests",
+        "Server validates CSRF token on protected endpoints",
+        "Token refreshed appropriately"
+      ],
+      "passes": false
+    },
+    {
+      "id": "a11y-keyboard-navigation",
+      "category": "accessibility",
+      "priority": 2,
+      "description": "All interactive elements are keyboard accessible",
+      "acceptance_criteria": [
+        "Tab order follows logical flow",
+        "Focus indicators visible on all focusable elements",
+        "Escape key closes modals and dropdowns",
+        "Enter/Space activates buttons and links",
+        "Arrow keys navigate within composite widgets"
+      ],
+      "passes": false
+    },
+    {
+      "id": "a11y-screen-reader",
+      "category": "accessibility",
+      "priority": 3,
+      "description": "Application is usable with screen readers",
+      "acceptance_criteria": [
+        "All images have appropriate alt text",
+        "Form inputs have associated labels",
+        "ARIA landmarks define page regions",
+        "Dynamic content announced via live regions",
+        "Error messages announced to screen readers"
+      ],
+      "passes": false
+    }
+  ],
+  "metadata": {
+    "total_features": 8,
+    "completed_features": 0,
+    "categories": {
+      "functional": 2,
+      "visual": 2,
+      "performance": 1,
+      "security": 1,
+      "accessibility": 2
+    }
+  }
+}
