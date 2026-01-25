@@ -1,7 +1,10 @@
 import type { Route } from "./+types/__index";
 import { WavyBackground } from "~/components/waves";
 import { TextHoverEffect } from "~/components/texthover";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { useState } from "react";
+import { createClient } from "~/lib/supabase/server";
+import { useGameApi } from "~/hooks/useGameApi";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -10,11 +13,84 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export function loader({ context }: Route.LoaderArgs) {
-  return { message: context.VALUE_FROM_NETLIFY };
+export async function loader({ request }: Route.LoaderArgs) {
+  const { supabase } = createClient(request);
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  return { 
+    isAuthenticated: !!user,
+    userEmail: user?.email ?? null,
+  };
+}
+
+/**
+ * Validate game code format: 6-8 alphanumeric characters.
+ */
+function isValidGameCode(code: string): boolean {
+  return /^[A-Za-z0-9]{6,8}$/.test(code);
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
+  const { isAuthenticated, userEmail } = loaderData;
+  const navigate = useNavigate();
+  const { createGame, isLoading, error, clearError } = useGameApi();
+  
+  const [gameCode, setGameCode] = useState('');
+  const [displayName, setDisplayName] = useState(userEmail?.split('@')[0] ?? '');
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [isJoining, setIsJoining] = useState(false);
+  
+  /**
+   * Handle creating a new game.
+   */
+  const handleCreateGame = async () => {
+    if (!displayName.trim()) {
+      return;
+    }
+    
+    clearError();
+    const result = await createGame(displayName.trim());
+    if (result) {
+      navigate(`/games/${result.game.id}`);
+    }
+  };
+  
+  /**
+   * Handle joining an existing game by code.
+   */
+  const handleJoinGame = async () => {
+    const code = gameCode.trim().toUpperCase();
+    
+    // Validate format
+    if (!isValidGameCode(code)) {
+      setCodeError('Game code must be 6-8 alphanumeric characters');
+      return;
+    }
+    
+    setCodeError(null);
+    setIsJoining(true);
+    
+    try {
+      // Look up game by code
+      const response = await fetch(`/api/games/lookup?key=${encodeURIComponent(code)}`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        setCodeError(data.error || 'Game not found');
+        return;
+      }
+      
+      const data = await response.json();
+      navigate(`/games/${data.game.id}`);
+    } catch {
+      setCodeError('Failed to look up game');
+    } finally {
+      setIsJoining(false);
+    }
+  };
+  
   return (
     <div className="min-h-screen bg-stone-900 text-white">
       {/* Hero Section with Wavy Background */}
@@ -36,26 +112,122 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             A Social Deduction Game of Trust and Deception
           </p>
           
-          <div className="flex flex-col sm:flex-row justify-center gap-6 mt-8">
-            <Link 
-              to="/games"
-              className="group bg-blue-600/80 hover:bg-blue-500/90 transition-all duration-300 backdrop-blur-sm text-white font-semibold py-4 px-8 rounded-xl shadow-lg text-center text-lg flex items-center justify-center gap-2"
-            >
-              <span>Create Game</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-            </Link>
-            <Link 
-              to="/games/join"
-              className="group bg-indigo-600/80 hover:bg-indigo-500/90 transition-all duration-300 backdrop-blur-sm text-white font-semibold py-4 px-8 rounded-xl shadow-lg text-center text-lg flex items-center justify-center gap-2"
-            >
-              <span>Join Game</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </Link>
-          </div>
+          {!isAuthenticated ? (
+            /* Unauthenticated: Show sign-in button */
+            <div className="flex flex-col sm:flex-row justify-center gap-6 mt-8">
+              <Link 
+                to="/login"
+                className="group bg-blue-600/80 hover:bg-blue-500/90 transition-all duration-300 backdrop-blur-sm text-white font-semibold py-4 px-8 rounded-xl shadow-lg text-center text-lg flex items-center justify-center gap-2"
+              >
+                <span>Sign In to Play</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+              <Link 
+                to="/sign-up"
+                className="group bg-indigo-600/80 hover:bg-indigo-500/90 transition-all duration-300 backdrop-blur-sm text-white font-semibold py-4 px-8 rounded-xl shadow-lg text-center text-lg flex items-center justify-center gap-2"
+              >
+                <span>Create Account</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </Link>
+            </div>
+          ) : (
+            /* Authenticated: Show game creation and join options */
+            <div className="flex flex-col items-center gap-8 mt-8">
+              {/* Display Name Input */}
+              <div className="flex flex-col gap-2 w-full max-w-xs">
+                <label htmlFor="displayName" className="text-sm text-blue-200 text-left">
+                  Your Display Name
+                </label>
+                <input
+                  id="displayName"
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Enter your name"
+                  className="bg-gray-800/80 backdrop-blur-sm border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  maxLength={20}
+                />
+              </div>
+              
+              {/* Create Game Button */}
+              <button
+                onClick={handleCreateGame}
+                disabled={isLoading || !displayName.trim()}
+                className="group bg-blue-600/80 hover:bg-blue-500/90 disabled:bg-gray-600/50 disabled:cursor-not-allowed transition-all duration-300 backdrop-blur-sm text-white font-semibold py-4 px-8 rounded-xl shadow-lg text-center text-lg flex items-center justify-center gap-2 w-full max-w-xs"
+              >
+                {isLoading ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Creating...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Start New Game</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </>
+                )}
+              </button>
+              
+              {/* Error Display */}
+              {error && (
+                <p className="text-red-400 text-sm bg-red-900/30 px-4 py-2 rounded-lg">{error}</p>
+              )}
+              
+              {/* Divider */}
+              <div className="flex items-center gap-4 w-full max-w-xs">
+                <div className="flex-1 h-px bg-gray-600"></div>
+                <span className="text-gray-400 text-sm">or</span>
+                <div className="flex-1 h-px bg-gray-600"></div>
+              </div>
+              
+              {/* Join Game Section */}
+              <div className="flex flex-col gap-2 w-full max-w-xs">
+                <label htmlFor="gameCode" className="text-sm text-blue-200 text-left">
+                  Join with Game Code
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="gameCode"
+                    type="text"
+                    value={gameCode}
+                    onChange={(e) => {
+                      setGameCode(e.target.value.toUpperCase());
+                      setCodeError(null);
+                    }}
+                    placeholder="ABCD123"
+                    className="flex-1 bg-gray-800/80 backdrop-blur-sm border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent uppercase"
+                    maxLength={8}
+                  />
+                  <button
+                    onClick={handleJoinGame}
+                    disabled={isJoining || !gameCode.trim()}
+                    className="bg-indigo-600/80 hover:bg-indigo-500/90 disabled:bg-gray-600/50 disabled:cursor-not-allowed transition-all duration-300 backdrop-blur-sm text-white font-semibold px-6 rounded-xl shadow-lg flex items-center justify-center"
+                  >
+                    {isJoining ? (
+                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      <span>Join</span>
+                    )}
+                  </button>
+                </div>
+                {codeError && (
+                  <p className="text-red-400 text-sm">{codeError}</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </WavyBackground>
       
