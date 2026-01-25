@@ -802,3 +802,20 @@
   - Routes return 401 (unauthorized), 403 (forbidden - not in game/not leader), 404 (not found), 400 (invalid request)
   - Cannot perform actions for other players: routes use `gameService.getPlayer(gameId, user.id)` to find player from authenticated user
   - 43 integration tests in api.routes.integration.test.ts cover all security scenarios
+
+---
+## 2026-01-25 - hook-vibration
+- **What was implemented**: useVibration hook for device vibration on beeper activation
+- **Files changed**: 
+  - `app/hooks/useVibration.ts` (created - hook and helper function)
+  - `app/hooks/useVibration.test.ts` (created - 28 unit tests)
+- **Learnings:**
+  - Vibration API check: use `typeof navigator !== 'undefined' && 'vibrate' in navigator` for SSR compatibility
+  - Supabase broadcast channels use `.on('broadcast', { event: 'name' }, handler)` for pub/sub messaging
+  - Channel subscription status comes via callback to `.subscribe(status => ...)` - check for 'SUBSCRIBED' or 'CHANNEL_ERROR'
+  - Graceful degradation pattern: wrap navigator.vibrate() in try/catch since some browsers may throw
+  - Default vibration pattern `[200, 100, 200]` (vibrate-pause-vibrate) provides tactile feedback
+  - Export `broadcastVibration` helper for server-side to trigger vibration events to clients
+  - Hook returns `isSupported` boolean for UI to conditionally show vibration-related features
+  - Manual `triggerVibration()` method useful for testing and user-initiated feedback
+  - VibrationEvent type includes gameId, round, and targetPlayerIds for precise filtering

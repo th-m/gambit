@@ -676,7 +676,7 @@
         "Triggers navigator.vibrate() API",
         "Graceful degradation without API support"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "hook-game-api",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 86,
-    "completed_features": 53,
+    "completed_features": 54,
     "categories": {
       "functional": 68,
       "visual": 9,
