@@ -1009,3 +1009,21 @@
   - Button active states with `active:scale-[0.98]` provide tactile feedback on click
   - Use `tabular-nums` class for numeric displays (player count) to prevent layout shifts
   - "(you)" indicator for current user improves UX by helping users identify themselves in the list
+
+---
+## 2026-01-25 - ui-game-board-design
+- **What was implemented**: Enhanced main game board with improved visual design, responsive layout, and better UX
+- **Files changed**: 
+  - `app/components/GameBoard.tsx` (updated - comprehensive visual enhancement)
+  - `app/components/game-components.test.tsx` (updated - fixed tests for new CSS classes)
+- **Learnings:**
+  - Phase configuration object (PHASE_CONFIGS) with icon, color, description centralizes phase-specific styling
+  - Skeleton loading component (GameBoardSkeleton) should mirror actual layout structure for smooth transitions
+  - `ring-offset-*` classes in Tailwind create visual depth for focus/highlight states
+  - Collapsible sidebar pattern on mobile: use state toggle with conditional `hidden lg:block` classes
+  - Sticky header pattern: `sticky top-0 z-10 bg-*/95 backdrop-blur-sm border-b` for semi-transparent effect
+  - Progress bar animations: `transition-all duration-700 ease-out` provides smooth growth effect
+  - SidebarSection component with optional title keeps sidebar structure consistent
+  - Error state screens with icon + message + action button pattern improves user experience
+  - When updating visual design, tests using CSS class selectors (querySelector) need updating to match new classes
+  - Use attribute selectors `[class*="keyword"]` in tests for more flexible class matching
