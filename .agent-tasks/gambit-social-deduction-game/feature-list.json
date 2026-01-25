@@ -1079,7 +1079,7 @@
         "Touch targets appropriately sized on mobile",
         "No horizontal scrolling on any viewport"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "ui-animations-transitions",
@@ -1138,7 +1138,7 @@
         "Prevents spam/DoS of game state",
         "Appropriate error messages for rate limited requests"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-security",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 86,
-    "completed_features": 68,
+    "completed_features": 70,
     "categories": {
       "functional": 68,
       "visual": 9,

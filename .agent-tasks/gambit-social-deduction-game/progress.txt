@@ -1093,3 +1093,43 @@
   - Stats footer with divided sections (rounds, scores, players) provides clear game summary
   - Use `CharacterName` type (not `CharacterId`) from game.ts for character-related type definitions
   - End reason formatting should include icons for quick visual scanning alongside explanatory text
+
+---
+## 2026-01-25 - ui-responsive-game
+- **What was implemented**: Comprehensive responsive design for game interface across all viewports (mobile, tablet, desktop)
+- **Files changed**: 
+  - `app/components/GameBoard.tsx` (updated - responsive grid, spacing, touch targets)
+  - `app/components/Lobby.tsx` (updated - responsive layout, touch-friendly buttons)
+- **Learnings:**
+  - Use `md:` breakpoint (768px) for tablet layout between mobile (sm:) and desktop (lg:)
+  - Grid layout pattern for responsive columns: `grid-cols-1 md:grid-cols-5 lg:grid-cols-3` with `md:col-span-3 lg:col-span-2` for main content
+  - All touch targets should have `min-h-[44px] min-w-[44px]` for mobile accessibility (WCAG requirement)
+  - Add `overflow-x-hidden` on main container to prevent horizontal scrolling
+  - Use responsive text sizes: `text-xs sm:text-sm md:text-base` for scaling typography
+  - Collapsible sidebar pattern: show toggle button on mobile (`md:hidden`), auto-show sidebar on tablet+ (`hidden md:block`)
+  - Container padding pattern: `px-3 sm:px-4 md:px-6` for responsive horizontal spacing
+  - Use `shrink-0` and `min-w-0` on flex children to prevent content overflow issues
+  - Test components at common breakpoints: 320px (small mobile), 375px (mobile), 768px (tablet), 1024px (desktop), 1440px (large desktop)
+
+---
+## 2026-01-25 - security-rate-limiting
+- **What was implemented**: In-memory rate limiting for game API endpoints
+- **Files changed**: 
+  - `app/utils/rateLimiter.ts` (created - RateLimiter class, config, helpers)
+  - `app/utils/rateLimiter.test.ts` (created - 30 unit tests)
+  - `app/routes/api.games.create.tsx` (updated - added rate limit check)
+  - `app/routes/api.games.$gameId.vote.tsx` (updated - added rate limit check)
+  - `app/routes/api.games.$gameId.action.tsx` (updated - added rate limit check)
+  - `app/routes/api.routes.integration.test.ts` (updated - clear rate limiters between tests)
+  - `app/security/security.test.ts` (updated - implemented rate limiting tests)
+- **Learnings:**
+  - Rate limiting utility goes in `app/utils/` - follows existing util pattern for game-specific logic
+  - Sliding window algorithm provides accurate rate limiting: track timestamps per key, filter to window, count remaining
+  - RateLimiter class pattern: singleton instances for different limits (gameCreation, voteSubmission, actionExecution)
+  - Rate limit check happens AFTER authentication but BEFORE any business logic - ensures only valid users are rate limited
+  - `checkRateLimit(limiter, key)` returns null if allowed, Response with 429 status if blocked
+  - Standard rate limit headers: `Retry-After`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+  - `createRateLimitKey(userId, endpoint)` creates unique keys per user+endpoint combination
+  - Integration tests that call rate-limited routes need to clear rate limiters in `beforeEach`/`afterEach`
+  - Default limits: game creation 5/min, votes 10/10s, actions 5/10s - balance between spam prevention and normal use
+  - Cleanup interval prevents memory leaks in long-running servers - runs every 60s to remove expired entries
