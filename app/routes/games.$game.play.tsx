@@ -13,6 +13,7 @@ import { Link } from 'react-router';
 import { gameService } from '~/services/GameService';
 import { GameFlowProvider, useGameFlow } from '~/contexts/GameFlowContext';
 import { GameBoard } from '~/components/GameBoard';
+import { LeaderVoting } from '~/components/LeaderVoting';
 import type { Game, Player, GamePhase } from '~/types/game';
 
 // =============================================================================
@@ -88,33 +89,13 @@ function LeaderVotingPhase() {
 
   if (!game || !currentPlayer) return null;
 
-  // Find current leader
-  const alivePlayers = players.filter((p) => p.is_alive).sort((a, b) => (a.seat_order ?? 0) - (b.seat_order ?? 0));
-  const leader = alivePlayers[game.crown_index % alivePlayers.length];
-
   return (
-    <div className="text-center">
-      <h2 className="text-2xl font-bold mb-2">Vote for Leader</h2>
-      <p className="text-gray-400 mb-6">
-        <span className="text-blue-400 font-semibold">{leader?.display_name}</span> is the proposed leader
-      </p>
-      <p className="text-sm text-gray-500 mb-4">Rejections: {game.rejection_count}/3</p>
-
-      <div className="flex gap-4 justify-center">
-        <button
-          onClick={() => submitLeaderVote(true)}
-          className="px-8 py-3 bg-green-600 hover:bg-green-500 rounded-xl font-semibold transition-colors"
-        >
-          Approve
-        </button>
-        <button
-          onClick={() => submitLeaderVote(false)}
-          className="px-8 py-3 bg-red-600 hover:bg-red-500 rounded-xl font-semibold transition-colors"
-        >
-          Reject
-        </button>
-      </div>
-    </div>
+    <LeaderVoting
+      game={game}
+      players={players}
+      currentPlayer={currentPlayer}
+      onVote={submitLeaderVote}
+    />
   );
 }
 
