@@ -1231,3 +1231,18 @@
   - Test mixed outcomes (good wins some, evil wins some) to verify victory tracking works correctly
   - Verify good players cannot vote fail using VoteProcessor validation error message
   - No assassination phase check confirms evil victory path doesn't trigger unnecessary game phases
+
+---
+## 2026-01-25 - e2e-evil-victory-assassination
+- **What was implemented**: End-to-end test for evil team victory via correct Seer assassination
+- **Files changed**: 
+  - `app/e2e/evil-victory-assassination.test.ts` (created - 9 tests covering assassination victory path)
+- **Learnings:**
+  - Assassination victory flow: good completes 3 missions → assassination phase → Assassin targets Seer → evil wins
+  - End reason for assassination victory is "Seer assassinated" (from ActionProcessor handler)
+  - ActionProcessor doesn't validate character ownership of actions at execution time - ActionPanel filters via getAvailableActions
+  - When protection blocks assassination, `gameEnded` is `false` (not `undefined`) - action succeeds but game doesn't end
+  - `completeSuccessfulRound` helper simplifies test setup by wrapping leader voting → team selection → mission voting
+  - Test Phantom edge cases: Phantom is NOT the Seer, so targeting Phantom results in good victory (wrong target)
+  - Protection can block assassination during mission_voting phase - both protect and assassinate available then
+  - Character registry can be imported directly to verify action assignments via `characterRegistry.get('Assassin').actions`
