@@ -286,3 +286,15 @@
   - Protection check can happen in both execute (return early with success=true) and handler (skip elimination)
   - Win conditions differ by phase: assassination phase wrong target = good wins; mission_voting phase doesn't trigger end game
   - Registration split: `registerAssassinateAction()` for ActionRegistry, `registerAssassinateHandler(processor)` for ActionProcessor
+
+---
+## 2026-01-25 - action-rig-vote
+- **What was implemented**: Rig vote action for the Fixer character to force mission pass
+- **Files changed**: 
+  - `app/actions/rigVote.ts` (created - action definition and handler)
+- **Learnings:**
+  - Actions without targets use `minTargets: 0, maxTargets: 0` and validateTargets returns valid when targetIds.length === 0
+  - Handler uses `proc.addModifier()` to create game modifier for current round
+  - Modifier type `force_pass` is already handled in VoteProcessor's `processMissionResult` - sets failVotes to 0
+  - Follow same pattern as assassinate: separate ActionDefinition, handler factory, and registration functions
+  - No need to check requiresOnTeam for actions that work from outside the mission team

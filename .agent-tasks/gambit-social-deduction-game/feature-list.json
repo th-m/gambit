@@ -333,7 +333,7 @@
         "Creates game_modifier that forces mission pass",
         "Modifier applies only to current round"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "action-plant-beeper",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 20,
+    "completed_features": 21,
     "categories": {
       "functional": 68,
       "visual": 9,
