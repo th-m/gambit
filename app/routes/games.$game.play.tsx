@@ -2,7 +2,7 @@
  * Game Play Page - /games/:gameId/play
  *
  * Main game page container that wraps content in GameFlowProvider
- * and renders phase-appropriate components.
+ * and renders the GameBoard component with phase-appropriate content.
  */
 
 import { useParams, useNavigate, useLoaderData } from 'react-router';
@@ -12,6 +12,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router';
 import { gameService } from '~/services/GameService';
 import { GameFlowProvider, useGameFlow } from '~/contexts/GameFlowContext';
+import { GameBoard } from '~/components/GameBoard';
 import type { Game, Player, GamePhase } from '~/types/game';
 
 // =============================================================================
@@ -217,82 +218,6 @@ function AssassinationPhase() {
 }
 
 // =============================================================================
-// Character Info Panel (Placeholder)
-// =============================================================================
-
-function CharacterInfoPanel() {
-  const { currentPlayer, players } = useGameFlow();
-
-  if (!currentPlayer) return null;
-
-  const teamColor = currentPlayer.team === 'good' ? 'text-blue-400' : 'text-red-400';
-
-  return (
-    <div className="bg-stone-800 rounded-xl p-4 border border-stone-700">
-      <h3 className="font-semibold mb-2">Your Role</h3>
-      <p className={`text-xl font-bold ${teamColor}`}>{currentPlayer.character}</p>
-      <p className="text-sm text-gray-400 capitalize">{currentPlayer.team} Team</p>
-      {/* Full character info will be implemented in component-character-info story */}
-    </div>
-  );
-}
-
-// =============================================================================
-// Action Panel (Placeholder)
-// =============================================================================
-
-function ActionPanel() {
-  const { currentPlayer, game } = useGameFlow();
-
-  if (!currentPlayer || !game) return null;
-
-  // Only show for characters with actions
-  const hasActions =
-    currentPlayer.character === 'Assassin' ||
-    currentPlayer.character === 'Guardian' ||
-    currentPlayer.character === 'Fixer' ||
-    currentPlayer.character === 'Tracker' ||
-    currentPlayer.character === 'Saboteur';
-
-  if (!hasActions) return null;
-
-  return (
-    <div className="bg-stone-800 rounded-xl p-4 border border-stone-700">
-      <h3 className="font-semibold mb-2">Special Actions</h3>
-      <p className="text-sm text-gray-400">(Actions panel coming soon)</p>
-      {/* Full action panel will be implemented in component-action-panel story */}
-    </div>
-  );
-}
-
-// =============================================================================
-// Score Board (Placeholder)
-// =============================================================================
-
-function ScoreBoard() {
-  const { game } = useGameFlow();
-
-  if (!game) return null;
-
-  return (
-    <div className="flex items-center justify-center gap-6 mb-6">
-      <div className="text-center">
-        <p className="text-sm text-gray-400">Good</p>
-        <p className="text-2xl font-bold text-blue-400">{game.good_victories}</p>
-      </div>
-      <div className="text-center">
-        <p className="text-sm text-gray-400">Round</p>
-        <p className="text-2xl font-bold text-white">{game.current_round}</p>
-      </div>
-      <div className="text-center">
-        <p className="text-sm text-gray-400">Evil</p>
-        <p className="text-2xl font-bold text-red-400">{game.evil_victories}</p>
-      </div>
-    </div>
-  );
-}
-
-// =============================================================================
 // Game Over Screen (Placeholder)
 // =============================================================================
 
@@ -343,55 +268,11 @@ function GameOverScreen() {
 }
 
 // =============================================================================
-// Phase Router
+// Phase Router - Routes to correct phase component
 // =============================================================================
 
-function PhaseRouter() {
-  const { game, isLoading, error } = useGameFlow();
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <svg
-          className="animate-spin h-8 w-8 text-blue-400"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
-        </svg>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-red-400">{error}</p>
-      </div>
-    );
-  }
-
-  if (!game) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-400">Game not found</p>
-      </div>
-    );
-  }
-
-  // Show game over screen if finished
-  if (game.status === 'finished') {
-    return <GameOverScreen />;
-  }
-
-  // Route to phase-appropriate component
-  const phase = game.phase as GamePhase;
+function renderPhaseContent(phase: GamePhase | null): React.ReactNode {
+  // Handle game over via separate check in GameBoardWithPhases
 
   switch (phase) {
     case 'voting_for_leader':
@@ -414,41 +295,24 @@ function PhaseRouter() {
 }
 
 // =============================================================================
-// Game Board Container
+// Game Board with Phase Content
 // =============================================================================
 
-function GameBoard() {
-  return (
-    <div className="min-h-screen bg-stone-900 text-white p-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Score Board */}
-        <ScoreBoard />
+function GameBoardWithPhases() {
+  const { game } = useGameFlow();
 
-        {/* Main Game Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Phase Content */}
-          <div className="lg:col-span-2">
-            <div className="bg-stone-800 rounded-2xl p-6 border border-stone-700 min-h-[300px] flex items-center justify-center">
-              <PhaseRouter />
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-4">
-            <CharacterInfoPanel />
-            <ActionPanel />
-          </div>
-        </div>
-
-        {/* Back link */}
-        <div className="mt-6 text-center">
-          <Link to="/" className="text-gray-400 hover:text-white transition-colors">
-            ← Back to Home
-          </Link>
+  // Show game over screen if finished
+  if (game?.status === 'finished') {
+    return (
+      <div className="min-h-screen bg-stone-900 text-white p-6">
+        <div className="max-w-4xl mx-auto">
+          <GameOverScreen />
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return <GameBoard renderPhase={renderPhaseContent} />;
 }
 
 // =============================================================================
@@ -512,7 +376,7 @@ export default function GamePlayPage() {
     );
   }
 
-  // Wrap in GameFlowProvider
+  // Wrap in GameFlowProvider with GameBoard component
   return (
     <GameFlowProvider
       gameId={initialGame.id}
@@ -520,7 +384,7 @@ export default function GamePlayPage() {
       initialGame={initialGame}
       initialPlayers={initialPlayers}
     >
-      <GameBoard />
+      <GameBoardWithPhases />
     </GameFlowProvider>
   );
 }
