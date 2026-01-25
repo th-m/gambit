@@ -1246,3 +1246,17 @@
   - Test Phantom edge cases: Phantom is NOT the Seer, so targeting Phantom results in good victory (wrong target)
   - Protection can block assassination during mission_voting phase - both protect and assassinate available then
   - Character registry can be imported directly to verify action assignments via `characterRegistry.get('Assassin').actions`
+
+---
+## 2026-01-25 - e2e-rejection-auto-fail
+- **What was implemented**: End-to-end test for 3-rejection auto-fail rule covering all game scenarios
+- **Files changed**: 
+  - `app/e2e/rejection-auto-fail.test.ts` (created - 12 tests)
+- **Learnings:**
+  - VoteProcessor tracks votes by `(round, phase)`, not by individual leader voting sessions (crown_index)
+  - Within a single round, multiple leader voting sessions require clearing votes via `voteProcessor.clear()` to allow re-voting
+  - Existing tests for 3-rejection handle this by setting `rejection_count` directly rather than simulating 3 separate rejections
+  - Test helpers (`rejectLeader`, `approveLeader`) should call `clear()` after completion to allow subsequent voting in same round
+  - Tie votes (equal yes/no) count as rejection - `yesVotes > noVotes` must be strictly greater for approval
+  - End reason for rejection-based evil victory is "3 consecutive leader rejections" (from VoteProcessor.handleThreeRejections)
+  - Crown rotation happens regardless of whether the 3rd rejection triggers auto-fail
