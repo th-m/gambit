@@ -365,3 +365,20 @@
   - Return type `CharacterAssignmentResult` bundles player updates and crown_index for atomic game start
   - Player updates use `PlayerUpdate` type from game.ts for type safety
   - Crown index is 0 to N-1, randomly selected independently from seat order
+
+---
+## 2026-01-25 - test-util-character-assignment
+- **What was implemented**: Comprehensive unit tests for character assignment utility (60 tests)
+- **Files changed**: 
+  - `app/utils/characterAssignment.test.ts` (created - 60 unit tests)
+  - `app/types/game.ts` (updated - added Soldier character)
+  - `app/registry/CharacterRegistry.ts` (updated - added Soldier definition)
+  - `app/registry/CharacterRegistry.test.ts` (updated - added Soldier to character count tests)
+- **Learnings:**
+  - Tests uncovered a data inconsistency: 5 good characters defined but 6 needed for 9-10 player games
+  - Added "Soldier" character (like Villager, no special abilities) to support full team compositions
+  - Statistical tests for randomization use multiple iterations (30-50) and count unique results to verify variance
+  - Use `it.each()` from Vitest to parameterize tests for all player counts (5-10) with expected team sizes
+  - Player interface does NOT have `updated_at` field - check type definitions before creating test helpers
+  - Test helpers like `createTestPlayers(count)` simplify repeated test setup
+  - Tests should verify both edge cases (min/max) and all intermediate values for player count validation

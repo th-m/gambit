@@ -449,7 +449,7 @@
         "Test all players get unique characters",
         "Test seat_order is 0 to N-1"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "util-game-utils",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 26,
+    "completed_features": 27,
     "categories": {
       "functional": 68,
       "visual": 9,
