@@ -38,6 +38,7 @@ export type CharacterName =
   | 'Guardian'
   | 'Tracker'
   | 'Villager'
+  | 'Soldier'
   // Evil team
   | 'Assassin'
   | 'Fixer'
@@ -296,6 +297,7 @@ export const CHARACTER_NAMES: readonly CharacterName[] = [
   'Guardian',
   'Tracker',
   'Villager',
+  'Soldier',
   'Assassin',
   'Fixer',
   'Phantom',
@@ -312,6 +314,7 @@ export const GOOD_CHARACTERS: readonly CharacterName[] = [
   'Guardian',
   'Tracker',
   'Villager',
+  'Soldier',
 ] as const;
 
 /**

@@ -201,11 +201,11 @@ describe('CharacterRegistry', () => {
   });
 
   describe('registerAllCharacters', () => {
-    it('should register all 10 characters from technical plan', () => {
+    it('should register all 11 characters', () => {
       registerAllCharacters();
 
       const allCharacters = characterRegistry.getAll();
-      expect(allCharacters).toHaveLength(10);
+      expect(allCharacters).toHaveLength(11);
 
       // Verify all character names
       const characterNames = allCharacters.map((c) => c.name);
@@ -214,6 +214,7 @@ describe('CharacterRegistry', () => {
       expect(characterNames).toContain('Guardian');
       expect(characterNames).toContain('Tracker');
       expect(characterNames).toContain('Villager');
+      expect(characterNames).toContain('Soldier');
       expect(characterNames).toContain('Assassin');
       expect(characterNames).toContain('Fixer');
       expect(characterNames).toContain('Phantom');
@@ -230,6 +231,7 @@ describe('CharacterRegistry', () => {
       expect(characterRegistry.get('Guardian')?.team).toBe('good');
       expect(characterRegistry.get('Tracker')?.team).toBe('good');
       expect(characterRegistry.get('Villager')?.team).toBe('good');
+      expect(characterRegistry.get('Soldier')?.team).toBe('good');
 
       // Evil team characters
       expect(characterRegistry.get('Assassin')?.team).toBe('evil');
@@ -281,7 +283,7 @@ describe('CharacterRegistry', () => {
     it('should return correct characters for good team', () => {
       const goodCharacters = characterRegistry.getByTeam('good');
 
-      expect(goodCharacters).toHaveLength(5);
+      expect(goodCharacters).toHaveLength(6);
 
       const names = goodCharacters.map((c) => c.name);
       expect(names).toContain('Seer');
@@ -289,6 +291,7 @@ describe('CharacterRegistry', () => {
       expect(names).toContain('Guardian');
       expect(names).toContain('Tracker');
       expect(names).toContain('Villager');
+      expect(names).toContain('Soldier');
 
       // Verify all are good team
       goodCharacters.forEach((char) => {

@@ -263,6 +263,17 @@ const villagerDefinition: CharacterDefinition = {
   effects: [] as EffectId[],
 };
 
+const soldierDefinition: CharacterDefinition = {
+  name: 'Soldier',
+  team: 'good',
+  description: 'A loyal member of the good team with no special abilities.',
+  info: (): CharacterInfo => ({
+    description: 'You have no special knowledge',
+  }),
+  actions: [] as ActionId[],
+  effects: [] as EffectId[],
+};
+
 // =============================================================================
 // Evil Team Characters
 // =============================================================================
@@ -362,6 +373,7 @@ export function registerAllCharacters(): void {
   characterRegistry.register(guardianDefinition);
   characterRegistry.register(trackerDefinition);
   characterRegistry.register(villagerDefinition);
+  characterRegistry.register(soldierDefinition);
 
   // Evil team
   characterRegistry.register(assassinDefinition);
@@ -378,6 +390,7 @@ export {
   guardianDefinition,
   trackerDefinition,
   villagerDefinition,
+  soldierDefinition,
   assassinDefinition,
   fixerDefinition,
   phantomDefinition,
