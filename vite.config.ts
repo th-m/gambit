@@ -3,7 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-export default defineConfig(({ isSsrBuild }) => ({
+export default defineConfig(({ isSsrBuild, mode }) => ({
   build: {
     rollupOptions: isSsrBuild
       ? {
@@ -11,7 +11,12 @@ export default defineConfig(({ isSsrBuild }) => ({
         }
       : undefined,
   },
-  plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
+  plugins: [
+    tailwindcss(),
+    // Disable React Router plugin during tests to avoid preamble detection issues
+    mode !== "test" && reactRouter(),
+    tsconfigPaths(),
+  ].filter(Boolean),
   test: {
     globals: true,
     environment: "node",
