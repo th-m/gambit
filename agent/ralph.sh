@@ -44,7 +44,7 @@ PROGRESS_FILE="$TASK_DIR/progress.txt"
 # Verify task exists
 if [ ! -d "$TASK_DIR" ]; then
     echo -e "${RED}Error: Task '$TASK_NAME' not found at $TASK_DIR${NC}"
-    echo "Create it with: ./scripts/agent-harness/init-task.sh $TASK_NAME"
+    echo "Create it with: ./agent/init.sh $TASK_NAME"
     exit 1
 fi
 

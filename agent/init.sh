@@ -3,7 +3,7 @@
 
 # Ralph-style Task Initializer
 # Creates a new task directory with prd.json, prompt.md, and progress.txt
-# Usage: ./scripts/agent-harness/init-task.sh "task-name" "Task description"
+# Usage: ./agent/init.sh "task-name" "Task description"
 
 set -e
 
@@ -170,7 +170,7 @@ cat > "$TASK_DIR/README.md" << EOF
 ## Running
 
 \`\`\`bash
-./scripts/agent-harness/ralph.sh 10 $TASK_NAME
+./agent/ralph.sh 10 $TASK_NAME
 \`\`\`
 
 ## How It Works
@@ -197,4 +197,4 @@ echo "   - Keep stories SMALL (fit in one context window)"
 echo "   - Include 'npm run validate passes' in criteria"
 echo ""
 echo "2. Run Ralph:"
-echo "   ./scripts/agent-harness/ralph.sh 10 $TASK_NAME"
+echo "   ./agent/ralph.sh 10 $TASK_NAME"

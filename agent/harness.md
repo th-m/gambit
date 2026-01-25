@@ -18,7 +18,7 @@ This harness solves common problems when AI agents work on tasks that span multi
 ### 1. Initialize a New Task
 
 ```bash
-./scripts/agent-harness/init-task.sh "my-feature-name" "Description of what you're building"
+./agent/init.sh "my-feature-name" "Description of what you're building"
 ```
 
 This creates:
@@ -53,7 +53,7 @@ Edit `.agent-tasks/my-feature-name/feature-list.json` to add all features:
 }
 ```
 
-See `feature-list.template.json` for a comprehensive example.
+See `feature-list-example.json` for a comprehensive example.
 
 ### 3. Start Working
 
@@ -155,8 +155,8 @@ The agent will automatically:
 | File                                               | Purpose                             |
 | -------------------------------------------------- | ----------------------------------- |
 | `.cursor/rules/long-running-tasks.mdc`             | Cursor rule that guides the agent   |
-| `scripts/agent-harness/init-task.sh`               | Creates new task directories        |
-| `scripts/agent-harness/feature-list.template.json` | Example feature list                |
+| `agent/init.sh`                                    | Creates new task directories        |
+| `agent/feature-list-example.json`                  | Example feature list                |
 | `.agent-tasks/<name>/`                             | Individual task working directories |
 
 ## Customization
