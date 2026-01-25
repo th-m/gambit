@@ -1,4 +1,3 @@
-
 #!/bin/bash
 # Ralph-style autonomous coding loop for Cursor
 # Based on: https://ghuntley.com/ralph and https://x.com/ryancarson/status/2008548371712135632
@@ -9,7 +8,7 @@ set -e
 MAX_ITERATIONS=${1:-10}
 TASK_NAME=${2:-""}
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Colors
 RED='\033[0;31m'
@@ -38,7 +37,7 @@ fi
 
 TASK_DIR="$REPO_ROOT/.agent-tasks/$TASK_NAME"
 PROMPT_FILE="$TASK_DIR/prompt.md"
-PRD_FILE="$TASK_DIR/prd.json"
+PRD_FILE="$TASK_DIR/feature-list.json"
 PROGRESS_FILE="$TASK_DIR/progress.txt"
 
 # Verify task exists
@@ -50,7 +49,7 @@ fi
 
 # Verify required files exist
 if [ ! -f "$PRD_FILE" ]; then
-    echo -e "${RED}Error: prd.json not found at $PRD_FILE${NC}"
+    echo -e "${RED}Error: feature-list.json not found at $PRD_FILE${NC}"
     exit 1
 fi
 
@@ -64,13 +63,13 @@ You are an autonomous coding agent working on a feature branch.
 
 ## Your Task
 
-1. Read `.agent-tasks/TASK_NAME/prd.json` for the story list
+1. Read `.agent-tasks/TASK_NAME/feature-list.json` for the story list
 2. Read `.agent-tasks/TASK_NAME/progress.txt` for learnings (check Codebase Patterns first)
 3. Pick the highest priority story where `passes: false`
 4. Implement that ONE story completely
 5. Run validation: `npm run validate` (or appropriate checks)
 6. Commit your changes: `git commit -m "feat: [ID] - [Title]"`
-7. Update prd.json: change `passes: false` to `passes: true` for the completed story
+7. Update feature-list.json: change `passes: false` to `passes: true` for the completed story
 8. Append learnings to progress.txt
 
 ## Progress Format
@@ -95,7 +94,7 @@ Add reusable patterns to the TOP of progress.txt under "## Codebase Patterns":
 
 ## Stop Condition
 
-After updating prd.json, check if ALL stories have `passes: true`.
+After updating feature-list.json, check if ALL stories have `passes: true`.
 
 If ALL stories pass, output EXACTLY:
 <promise>COMPLETE</promise>
@@ -106,7 +105,7 @@ Otherwise, end normally (the loop will call you again for the next story).
 
 1. ONE story per iteration - don't try to do multiple
 2. ALWAYS run validation before committing
-3. ALWAYS update prd.json after completing a story
+3. ALWAYS update feature-list.json after completing a story
 4. ALWAYS append to progress.txt with learnings
 5. Small, focused commits with clear messages
 PROMPT_EOF
