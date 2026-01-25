@@ -692,7 +692,7 @@
         "Manages loading state during requests",
         "Handles and surfaces errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-hooks-all",

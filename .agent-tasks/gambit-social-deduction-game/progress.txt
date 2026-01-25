@@ -557,3 +557,17 @@
   - `vi.useFakeTimers()` and `vi.advanceTimersByTime()` essential for testing debounce behavior
   - Hook returns both state (`isComplete`, `voteCount`, `expectedCount`) and method (`checkCompletion`) for flexibility
   - Use `enabled` option to disable auto-triggering while still computing completion state
+
+---
+## 2026-01-25 - hook-game-api
+- **What was implemented**: useGameApi hook for making game API calls with loading and error state management
+- **Files changed**: 
+  - `app/hooks/useGameApi.ts` (created)
+  - `app/hooks/useGameApi.test.ts` (created - 31 unit tests)
+- **Learnings:**
+  - Hook wraps all API calls in a consistent pattern: setLoading(true) → try/catch → setLoading(false)
+  - Use `withLoadingState` helper function to reduce boilerplate across all API methods
+  - TypeScript closure assignments inside `act()` callbacks don't narrow types correctly - use explicit type assertions on expect statements
+  - `credentials: 'include'` required on fetch calls to include auth cookies
+  - Provide additional methods beyond spec (createGame, joinGame) for completeness
+  - Export response types (CreateGameResponse, JoinGameResponse, etc.) for consumers to use in type annotations
