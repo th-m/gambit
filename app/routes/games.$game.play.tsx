@@ -14,6 +14,7 @@ import { gameService } from '~/services/GameService';
 import { GameFlowProvider, useGameFlow } from '~/contexts/GameFlowContext';
 import { GameBoard } from '~/components/GameBoard';
 import { LeaderVoting } from '~/components/LeaderVoting';
+import { TeamSelection } from '~/components/TeamSelection';
 import type { Game, Player, GamePhase } from '~/types/game';
 
 // =============================================================================
@@ -104,24 +105,13 @@ function TeamSelectionPhase() {
 
   if (!game || !currentPlayer) return null;
 
-  // Find current leader
-  const alivePlayers = players.filter((p) => p.is_alive).sort((a, b) => (a.seat_order ?? 0) - (b.seat_order ?? 0));
-  const leader = alivePlayers[game.crown_index % alivePlayers.length];
-  const isLeader = currentPlayer.id === leader?.id;
-
   return (
-    <div className="text-center">
-      <h2 className="text-2xl font-bold mb-2">Team Selection</h2>
-      {isLeader ? (
-        <p className="text-gray-400 mb-6">Select players for the mission</p>
-      ) : (
-        <p className="text-gray-400 mb-6">
-          Waiting for <span className="text-blue-400">{leader?.display_name}</span> to select the team...
-        </p>
-      )}
-      {/* Team selection UI will be implemented in component-team-selection story */}
-      <p className="text-stone-500 text-sm">(Team selection interface coming soon)</p>
-    </div>
+    <TeamSelection
+      game={game}
+      players={players}
+      currentPlayer={currentPlayer}
+      onSelectTeam={selectTeam}
+    />
   );
 }
 
