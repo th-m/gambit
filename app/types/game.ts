@@ -89,6 +89,7 @@ export type EndReason =
   | 'Good completed 3 successful missions'
   | 'Evil sabotaged 3 missions'
   | 'Seer assassinated'
+  | 'Assassin failed to identify the Seer'
   | 'All evil players eliminated'
   | 'Evil has majority control'
   | '3 consecutive leader rejections';
