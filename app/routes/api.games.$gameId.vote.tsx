@@ -8,6 +8,7 @@ import { createClient } from '~/lib/supabase/server';
 import { gameService } from '~/services/GameService';
 import { voteProcessor } from '~/services/VoteProcessor';
 import type { LeaderVote, MissionVote, VoteResult } from '~/types/game';
+import { voteSubmissionLimiter, checkRateLimit, createRateLimitKey } from '~/utils/rateLimiter';
 
 /**
  * Request body schema for vote submission.
@@ -62,6 +63,13 @@ export async function action({ request, params }: ActionFunctionArgs): Promise<R
       JSON.stringify({ error: 'Unauthorized' } satisfies ErrorResponse),
       { status: 401, headers: { 'Content-Type': 'application/json' } }
     );
+  }
+
+  // Check rate limit for vote submission
+  const rateLimitKey = createRateLimitKey(user.id, 'vote');
+  const rateLimitResponse = checkRateLimit(voteSubmissionLimiter, rateLimitKey);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
   }
 
   try {

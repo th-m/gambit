@@ -6,6 +6,7 @@
 import type { ActionFunctionArgs } from 'react-router';
 import { createClient } from '~/lib/supabase/server';
 import { gameService } from '~/services/GameService';
+import { gameCreationLimiter, checkRateLimit, createRateLimitKey } from '~/utils/rateLimiter';
 
 /**
  * Request body schema for creating a game.
@@ -56,6 +57,13 @@ export async function action({ request }: ActionFunctionArgs): Promise<Response>
       JSON.stringify({ error: 'Unauthorized' } satisfies ErrorResponse),
       { status: 401, headers: { 'Content-Type': 'application/json' } }
     );
+  }
+
+  // Check rate limit for game creation
+  const rateLimitKey = createRateLimitKey(user.id, 'create');
+  const rateLimitResponse = checkRateLimit(gameCreationLimiter, rateLimitKey);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
   }
 
   try {

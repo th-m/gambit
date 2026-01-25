@@ -9,6 +9,7 @@ import { VoteProcessor, voteProcessor } from '~/services/VoteProcessor';
 import { ActionProcessor, actionProcessor } from '~/services/ActionProcessor';
 import { actionRegistry } from '~/registry/ActionRegistry';
 import type { CharacterName, Team, Player } from '~/types/game';
+import { gameCreationLimiter, voteSubmissionLimiter, actionExecutionLimiter } from '~/utils/rateLimiter';
 
 // Import action registrations
 import { registerAssassinateAction, registerAssassinateHandler } from '~/actions/assassinate';
@@ -137,6 +138,11 @@ function clearServices() {
   // Clear action processor state
   actionProcessor.clear();
   actionRegistry.clear();
+  
+  // Clear rate limiters
+  gameCreationLimiter.clear();
+  voteSubmissionLimiter.clear();
+  actionExecutionLimiter.clear();
 }
 
 /**

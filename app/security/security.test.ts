@@ -6,7 +6,7 @@
  * 2. Users cannot see other players' character info
  * 3. Users cannot perform actions in wrong phase
  * 4. Users cannot join game as different user (impersonation)
- * 5. Rate limiting blocks excessive requests (not implemented - see security-rate-limiting story)
+ * 5. Rate limiting blocks excessive requests
  * 6. RLS policies enforce access (database-level - tested via Supabase, not unit tests)
  */
 
@@ -20,6 +20,7 @@ import { effectRegistry } from '~/registry/EffectRegistry';
 import { registerAllEffects } from '~/effects';
 import { filterPlayersForViewer } from '~/utils/dataPrivacy';
 import type { CharacterName, Team, Player, Game } from '~/types/game';
+import { gameCreationLimiter, voteSubmissionLimiter, actionExecutionLimiter } from '~/utils/rateLimiter';
 
 // Import action registrations
 import { registerAssassinateAction, registerAssassinateHandler } from '~/actions/assassinate';
@@ -125,6 +126,11 @@ function clearServices() {
   (voteProcessor as any).statuses.clear();
   actionProcessor.clear();
   actionRegistry.clear();
+  
+  // Clear rate limiters
+  gameCreationLimiter.clear();
+  voteSubmissionLimiter.clear();
+  actionExecutionLimiter.clear();
 }
 
 function registerAllActions() {
@@ -783,17 +789,175 @@ describe('Security: Cannot join game as different user', () => {
 });
 
 // =============================================================================
-// SECURITY TEST 5: Rate limiting (NOT IMPLEMENTED)
+// SECURITY TEST 5: Rate limiting
 // =============================================================================
 
 describe('Security: Rate limiting', () => {
-  it.todo('rate limits vote submissions');
-  it.todo('rate limits action executions');
-  it.todo('rate limits game creation per user');
-  it.todo('returns appropriate error messages for rate limited requests');
+  beforeEach(() => {
+    clearServices();
+    registerAllActions();
+    registerAllCharacters();
+    registerAllEffects();
+  });
 
-  // Note: Rate limiting is tracked in story "security-rate-limiting"
-  // These tests are placeholder TODOs until that story is implemented
+  afterEach(() => {
+    clearServices();
+    characterRegistry.clear();
+    effectRegistry.clear();
+  });
+
+  it('rate limits vote submissions', async () => {
+    // Create game and set up for voting
+    const { gameId, players } = setupGameWithPlayers('user-1', [
+      { userId: 'user-1', name: 'Player 1', character: 'Assassin', team: 'evil' },
+      { userId: 'user-2', name: 'Player 2', character: 'Seer', team: 'good' },
+      { userId: 'user-3', name: 'Player 3', character: 'Villager', team: 'good' },
+      { userId: 'user-4', name: 'Player 4', character: 'Minion', team: 'evil' },
+      { userId: 'user-5', name: 'Player 5', character: 'Guardian', team: 'good' },
+    ]);
+
+    // Start game for voting
+    gameService.updateGame(gameId, {
+      status: 'playing',
+      phase: 'voting_for_leader',
+      current_round: 1,
+      crown_index: 0,
+    });
+
+    // Submit 10 votes (the limit for vote submission)
+    for (let i = 0; i < 10; i++) {
+      const response = await voteAction(
+        createActionArgs(
+          createRequest('POST', { voteType: 'leader', vote: 'yes' }, { userId: 'user-1' }),
+          { gameId }
+        )
+      );
+      // The first vote will succeed, subsequent votes will fail as "already voted"
+      // but none should hit rate limit until we reach 10 requests
+    }
+
+    // The 11th request should be rate limited
+    const response = await voteAction(
+      createActionArgs(
+        createRequest('POST', { voteType: 'leader', vote: 'yes' }, { userId: 'user-1' }),
+        { gameId }
+      )
+    );
+
+    expect(response.status).toBe(429);
+    const data = await response.json();
+    expect(data.error).toContain('Too many requests');
+    expect(response.headers.get('Retry-After')).toBeTruthy();
+  });
+
+  it('rate limits action executions', async () => {
+    // Create game and set up for actions
+    const { gameId, players } = setupGameWithPlayers('user-1', [
+      { userId: 'user-1', name: 'Player 1', character: 'Assassin', team: 'evil' },
+      { userId: 'user-2', name: 'Player 2', character: 'Seer', team: 'good' },
+      { userId: 'user-3', name: 'Player 3', character: 'Villager', team: 'good' },
+      { userId: 'user-4', name: 'Player 4', character: 'Minion', team: 'evil' },
+      { userId: 'user-5', name: 'Player 5', character: 'Guardian', team: 'good' },
+    ]);
+
+    gameService.updateGame(gameId, {
+      status: 'playing',
+      phase: 'mission_voting',
+      current_round: 1,
+      crown_index: 0,
+      selected_team: players.map((p) => p.id),
+    });
+
+    // Submit 5 action requests (the limit for action execution)
+    for (let i = 0; i < 5; i++) {
+      const seerPlayer = players.find((p) => p.character === 'Seer');
+      await gameAction(
+        createActionArgs(
+          createRequest(
+            'POST',
+            { actionId: 'assassinate', targetIds: [seerPlayer!.id] },
+            { userId: 'user-1' }
+          ),
+          { gameId }
+        )
+      );
+    }
+
+    // The 6th request should be rate limited
+    const seerPlayer = players.find((p) => p.character === 'Seer');
+    const response = await gameAction(
+      createActionArgs(
+        createRequest(
+          'POST',
+          { actionId: 'assassinate', targetIds: [seerPlayer!.id] },
+          { userId: 'user-1' }
+        ),
+        { gameId }
+      )
+    );
+
+    expect(response.status).toBe(429);
+    const data = await response.json();
+    expect(data.error).toContain('Too many requests');
+  });
+
+  it('rate limits game creation per user', async () => {
+    // Create 5 games (the limit for game creation per minute)
+    for (let i = 0; i < 5; i++) {
+      await createGameAction(
+        createActionArgs(
+          createRequest('POST', { displayName: `Player ${i}` }, { userId: 'rate-limit-user' })
+        )
+      );
+    }
+
+    // The 6th game creation should be rate limited
+    const response = await createGameAction(
+      createActionArgs(
+        createRequest('POST', { displayName: 'Player 6' }, { userId: 'rate-limit-user' })
+      )
+    );
+
+    expect(response.status).toBe(429);
+    const data = await response.json();
+    expect(data.error).toContain('Too many requests');
+  });
+
+  it('returns appropriate error messages for rate limited requests', async () => {
+    // Fill up the rate limit
+    for (let i = 0; i < 5; i++) {
+      await createGameAction(
+        createActionArgs(
+          createRequest('POST', { displayName: `Player ${i}` }, { userId: 'error-message-user' })
+        )
+      );
+    }
+
+    // Make rate-limited request
+    const response = await createGameAction(
+      createActionArgs(
+        createRequest('POST', { displayName: 'Player 6' }, { userId: 'error-message-user' })
+      )
+    );
+
+    expect(response.status).toBe(429);
+    const data = await response.json();
+    
+    // Check error message
+    expect(data.error).toBe('Too many requests. Please try again later.');
+    
+    // Check retryAfter is present
+    expect(typeof data.retryAfter).toBe('number');
+    expect(data.retryAfter).toBeGreaterThan(0);
+    
+    // Check remaining
+    expect(data.remaining).toBe(0);
+    
+    // Check headers
+    expect(response.headers.get('Retry-After')).toBeTruthy();
+    expect(response.headers.get('X-RateLimit-Remaining')).toBe('0');
+    expect(response.headers.get('X-RateLimit-Reset')).toBeTruthy();
+  });
 });
 
 // =============================================================================
