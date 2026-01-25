@@ -420,7 +420,7 @@
         "Seer does not see Saboteur in evil list",
         "Does not affect other evil players' knowledge"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "util-character-assignment",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 42,
+    "completed_features": 43,
     "categories": {
       "functional": 68,
       "visual": 9,

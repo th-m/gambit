@@ -651,3 +651,17 @@
   - Integration tests for effects need both this effect AND `appears_as_good` registered for CharacterRegistry to work correctly
   - For tests, can inline-register effects that aren't implemented yet using `effectRegistry.register()` helper
   - Player type requires `created_at` field - check type definitions when creating test helpers
+
+---
+## 2026-01-25 - effect-appears-as-good
+- **What was implemented**: The appears_as_good effect for Saboteur character, hiding them from the Seer's evil detection
+- **Files changed**: 
+  - `app/effects/appearsAsGood.ts` (created - effect definition)
+  - `app/effects/appearsAsGood.test.ts` (created - 20 unit tests)
+  - `app/effects/index.ts` (updated - added exports and registration)
+- **Learnings:**
+  - Follow same pattern as appears_as_seer effect: definition, test file, registration in index.ts
+  - CharacterRegistry already had `getVisibleEvilPlayers()` checking for `appears_as_good` modifier - just needed effect registration
+  - Saboteur already had `effects: ['appears_as_good']` in CharacterRegistry - effect was already wired up, just needed the EffectDefinition
+  - Integration tests should verify both effects work together in complex scenarios (Seer + Oracle + Saboteur + Phantom)
+  - Use `registerAppearsAsSeerEffect()` from the actual module in tests instead of inline registration for cleaner test setup
