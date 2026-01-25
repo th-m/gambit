@@ -1216,3 +1216,18 @@
   - Test findPlayerByCharacter and findPlayersByTeam helpers enable flexible player lookup in tests
   - VoteProcessor handles leader vote results and mission vote results, advancing game state appropriately
   - StateValidator.validateGameStart checks both host permission and player count (5-10)
+
+---
+## 2026-01-25 - e2e-evil-victory-missions
+- **What was implemented**: End-to-end test for evil team victory via failed missions
+- **Files changed**: 
+  - `app/e2e/evil-victory-missions.test.ts` (created - 9 tests covering evil victory path)
+- **Learnings:**
+  - Evil victory path is simpler than good - no assassination phase, game ends immediately when evil reaches 3 victories
+  - `runFailedMission` helper iterates team members and votes based on team alignment (evil votes fail, good votes pass)
+  - End reason for evil mission victory is "Evil sabotaged 3 missions" (matches VoteProcessor implementation)
+  - Round 4 with 7+ players requires 2 fail votes - tested both pass (1 fail) and fail (2 fails) scenarios
+  - Reuse helper functions from good-victory test: `createGameInLobby`, `startGameWithCharacters`, `approveLeader`, `selectTeam`, `getMissionSize`
+  - Test mixed outcomes (good wins some, evil wins some) to verify victory tracking works correctly
+  - Verify good players cannot vote fail using VoteProcessor validation error message
+  - No assassination phase check confirms evil victory path doesn't trigger unnecessary game phases
