@@ -19,12 +19,16 @@
  * - Responsive layout: mobile (stacked), tablet (2-col), desktop (3-col)
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router';
 import { useGameFlow } from '~/contexts/GameFlowContext';
 import { ActionPanel } from '~/components/ActionPanel';
 import { PlayerList } from '~/components/PlayerList';
 import { characterRegistry } from '~/registry/CharacterRegistry';
+import {
+  useScreenReaderAnnouncer,
+  formatPhaseAnnouncement,
+} from '~/hooks/useScreenReaderAnnouncer';
 import type {
   GamePhase,
   Player,
@@ -621,7 +625,7 @@ function PhaseIndicator({ phase, rejectionCount = 0 }: PhaseIndicatorProps) {
 
   if (!config) {
     return (
-      <div className="text-center mb-3 sm:mb-4 lg:mb-6">
+      <div className="text-center mb-3 sm:mb-4 lg:mb-6" role="status" aria-label="Unknown game phase">
         <span className="inline-block px-4 py-2 bg-stone-700 rounded-xl text-sm text-gray-400">
           Unknown Phase
         </span>
@@ -629,9 +633,19 @@ function PhaseIndicator({ phase, rejectionCount = 0 }: PhaseIndicatorProps) {
     );
   }
 
+  // Build accessible description for screen readers
+  const rejectionInfo = phase === 'voting_for_leader' && rejectionCount > 0
+    ? `. ${rejectionCount} of 3 rejections. ${rejectionCount === 2 ? 'Final chance before automatic evil point.' : ''}`
+    : '';
+  const accessibleDescription = `${config.name}: ${config.description}${rejectionInfo}`;
+
   return (
     <div className="mb-3 sm:mb-4 lg:mb-6">
-      <div className={`rounded-lg sm:rounded-xl ${config.bgColor} border ${config.borderColor} p-2.5 sm:p-3 md:p-4 transition-all duration-300`}>
+      <div 
+        className={`rounded-lg sm:rounded-xl ${config.bgColor} border ${config.borderColor} p-2.5 sm:p-3 md:p-4 transition-all duration-300`}
+        role="status"
+        aria-label={accessibleDescription}
+      >
         <div className="flex items-center justify-between gap-2 sm:gap-3">
           {/* Phase info */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
@@ -642,7 +656,7 @@ function PhaseIndicator({ phase, rejectionCount = 0 }: PhaseIndicatorProps) {
               <h2 className={`text-sm sm:text-base md:text-lg font-bold ${config.color} truncate`}>
                 {config.name}
               </h2>
-              <p className="text-[10px] sm:text-xs md:text-sm text-gray-400 truncate">
+              <p className="text-[10px] sm:text-xs md:text-sm text-gray-400 truncate" aria-hidden="true">
                 {config.description}
               </p>
             </div>
@@ -650,11 +664,14 @@ function PhaseIndicator({ phase, rejectionCount = 0 }: PhaseIndicatorProps) {
 
           {/* Rejection counter (only during leader voting) */}
           {phase === 'voting_for_leader' && rejectionCount > 0 && (
-            <div className="shrink-0 flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg bg-orange-500/20 border border-orange-500/30">
-              <span className="text-orange-400 text-[10px] sm:text-xs md:text-sm font-medium tabular-nums">
+            <div 
+              className="shrink-0 flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg bg-orange-500/20 border border-orange-500/30"
+              aria-label={`${rejectionCount} of 3 rejections${rejectionCount === 2 ? ', final chance' : ''}`}
+            >
+              <span className="text-orange-400 text-[10px] sm:text-xs md:text-sm font-medium tabular-nums" aria-hidden="true">
                 {rejectionCount}/3
               </span>
-              <span className="text-orange-400/60 text-[9px] sm:text-[10px] md:text-xs hidden xs:inline">
+              <span className="text-orange-400/60 text-[9px] sm:text-[10px] md:text-xs hidden xs:inline" aria-hidden="true">
                 rejects
               </span>
             </div>
@@ -738,6 +755,48 @@ export interface GameBoardProps {
 export function GameBoard({ renderPhase }: GameBoardProps) {
   const { game, players, actions, ctx, currentPlayer, isLoading, error, executeAction } = useGameFlow();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  
+  // Screen reader announcer for accessibility
+  const { announcePolite, announceAssertive, AnnouncerRegion } = useScreenReaderAnnouncer();
+  
+  // Track previous phase and round for announcing changes
+  const prevPhaseRef = useRef<GamePhase | null>(null);
+  const prevRoundRef = useRef<number | null>(null);
+
+  // Announce phase changes for screen readers
+  useEffect(() => {
+    if (!game) return;
+    
+    const currentPhase = game.phase as GamePhase | null;
+    const currentRound = game.current_round ?? 1;
+    
+    // Get leader name for phase announcements
+    const alivePlayers = players.filter((p) => p.is_alive).sort((a, b) => (a.seat_order ?? 0) - (b.seat_order ?? 0));
+    const leader = alivePlayers[(game.crown_index ?? 0) % alivePlayers.length];
+    const leaderName = leader?.display_name;
+    
+    // Check if phase changed
+    if (currentPhase && currentPhase !== prevPhaseRef.current) {
+      const announcement = formatPhaseAnnouncement(currentPhase, leaderName, currentRound);
+      
+      // Use assertive for critical phases (assassination), polite for others
+      if (currentPhase === 'assassination') {
+        announceAssertive(announcement);
+      } else {
+        announcePolite(announcement);
+      }
+      
+      prevPhaseRef.current = currentPhase;
+    }
+    
+    // Announce round changes
+    if (currentRound !== prevRoundRef.current && prevRoundRef.current !== null) {
+      if (currentRound > prevRoundRef.current) {
+        announcePolite(`Starting round ${currentRound}.`);
+      }
+    }
+    prevRoundRef.current = currentRound;
+  }, [game, players, announcePolite, announceAssertive]);
 
   // Initialize vibration listener for beepered players
   // Note: useVibration hook will be implemented in hook-vibration story
@@ -840,6 +899,9 @@ export function GameBoard({ renderPhase }: GameBoardProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-stone-900 via-stone-900 to-stone-950 text-white overflow-x-hidden">
+      {/* Screen reader live regions for announcements */}
+      <AnnouncerRegion />
+      
       {/* Top header with game info - responsive padding and touch-friendly back button */}
       <header className="sticky top-0 z-10 bg-stone-900/95 backdrop-blur-sm border-b border-stone-800">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2">
@@ -881,17 +943,25 @@ export function GameBoard({ renderPhase }: GameBoardProps) {
         <div className="grid grid-cols-1 md:grid-cols-5 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
           {/* Main Phase Content - Full width mobile, 3/5 tablet, 2/3 desktop */}
           <div className="md:col-span-3 lg:col-span-2 order-1">
-            <div className="bg-gradient-to-br from-stone-800 to-stone-800/80 rounded-2xl border border-stone-700/50 shadow-xl overflow-hidden">
+            <div 
+              className="bg-gradient-to-br from-stone-800 to-stone-800/80 rounded-2xl border border-stone-700/50 shadow-xl overflow-hidden"
+              role="main"
+              aria-label={`Game phase: ${PHASE_CONFIGS[game.phase as GamePhase]?.name || game.phase}`}
+            >
               {/* Phase content header for mobile context */}
               <div className="md:hidden border-b border-stone-700/50 p-3 flex items-center justify-between">
                 <span className="text-xs text-gray-500 uppercase tracking-wider">Current Phase</span>
                 {leaderName && (
-                  <span className="text-xs text-amber-400">
+                  <span className="text-xs text-amber-400" aria-label={`Current leader: ${leaderName}`}>
                     👑 {leaderName}
                   </span>
                 )}
               </div>
-              <div className="p-4 sm:p-5 lg:p-6 min-h-[260px] sm:min-h-[300px] lg:min-h-[340px] flex items-center justify-center">
+              <div 
+                className="p-4 sm:p-5 lg:p-6 min-h-[260px] sm:min-h-[300px] lg:min-h-[340px] flex items-center justify-center"
+                aria-live="polite"
+                aria-atomic="false"
+              >
                 {renderPhase ? (
                   renderPhase(game.phase as GamePhase | null)
                 ) : (

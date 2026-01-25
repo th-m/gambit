@@ -12,6 +12,10 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
+import {
+  useScreenReaderAnnouncer,
+  formatGameOverAnnouncement,
+} from '~/hooks/useScreenReaderAnnouncer';
 import type { Game, Player, ActionResult } from '~/types/game';
 
 // =============================================================================
@@ -198,6 +202,9 @@ export function AssassinationPhase({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<ActionResult | null>(null);
 
+  // Screen reader announcer
+  const { announcePolite, announceAssertive, AnnouncerRegion } = useScreenReaderAnnouncer();
+
   // Refs for double-click prevention
   const lastClickRef = useRef<number>(0);
   const CLICK_DEBOUNCE_MS = 500;
@@ -241,17 +248,29 @@ export function AssassinationPhase({
       setIsSubmitting(true);
       const actionResult = await onExecuteAction('assassinate', [selectedTarget]);
       setResult(actionResult);
+      
+      // Announce result to screen readers
+      if (actionResult.gameEnded && actionResult.winner) {
+        const endReason = actionResult.winner === 'evil'
+          ? 'The Seer has been assassinated.'
+          : 'The Assassin failed to identify the Seer.';
+        const announcement = formatGameOverAnnouncement(actionResult.winner, endReason);
+        announceAssertive(announcement);
+      }
     } catch (error) {
       console.error('Failed to execute assassination:', error);
       // Reset state on error to allow retry
       setIsSubmitting(false);
+      // Announce error to screen readers
+      announceAssertive('Failed to execute assassination. Please try again.');
     }
-  }, [selectedTarget, isSubmitting, result, onExecuteAction]);
+  }, [selectedTarget, isSubmitting, result, onExecuteAction, announceAssertive]);
 
   // Show result if assassination has been completed
   if (result) {
     return (
-      <div className="text-center">
+      <div className="text-center" role="region" aria-label="Assassination result">
+        <AnnouncerRegion />
         <h2 className="text-2xl font-bold mb-2 text-red-400">Assassination Complete</h2>
         <p className="text-gray-400 mb-6">The deed is done...</p>
         <ResultDisplay
@@ -265,7 +284,8 @@ export function AssassinationPhase({
   // Show waiting state for non-Assassin players
   if (!isAssassin) {
     return (
-      <div className="text-center">
+      <div className="text-center" role="region" aria-label="Assassination phase - waiting">
+        <AnnouncerRegion />
         <h2 className="text-2xl font-bold mb-2 text-red-400">Assassination Phase</h2>
         <p className="text-gray-400 mb-6">Good team has won 3 missions, but the Assassin has one last chance...</p>
         <WaitingView assassinName={assassinName} />
@@ -275,8 +295,9 @@ export function AssassinationPhase({
 
   // Show assassination interface for the Assassin
   return (
-    <div className="text-center">
-      <h2 className="text-2xl font-bold mb-2 text-red-400">Assassination Phase</h2>
+    <div className="text-center" role="region" aria-label="Assassination phase - select target">
+      <AnnouncerRegion />
+      <h2 className="text-2xl font-bold mb-2 text-red-400" id="assassination-heading">Assassination Phase</h2>
       <p className="text-gray-400 mb-2">
         Good has won 3 missions, but you have one last chance to win!
       </p>

@@ -15,6 +15,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useVoteSubscription } from '~/hooks/useVoteSubscription';
 import { useVoteCompletion } from '~/hooks/useVoteCompletion';
+import {
+  useScreenReaderAnnouncer,
+  formatVoteResultAnnouncement,
+} from '~/hooks/useScreenReaderAnnouncer';
 import type { Game, Player, MissionVote, VoteResult } from '~/types/game';
 
 // =============================================================================
@@ -464,6 +468,9 @@ export function MissionVoting({ game, players, currentPlayer, onVote }: MissionV
   const [voteResults, setVoteResults] = useState<MissionVoteResults | null>(null);
   const [wasRigged, setWasRigged] = useState(false);
 
+  // Screen reader announcer
+  const { announcePolite, announceAssertive, AnnouncerRegion } = useScreenReaderAnnouncer();
+
   // Refs for double-click prevention
   const lastClickRef = useRef<number>(0);
   const CLICK_DEBOUNCE_MS = 500;
@@ -491,6 +498,15 @@ export function MissionVoting({ game, players, currentPlayer, onVote }: MissionV
       setShowResults(true);
       // Note: Rigging detection would require comparing with server state after processing
       // For now, we show results as-is and server handles the actual pass/fail determination
+      
+      // Announce results to screen readers
+      const announcement = formatVoteResultAnnouncement(
+        'mission',
+        results.passed ? 'passed' : 'failed',
+        results.passCount,
+        results.failCount
+      );
+      announceAssertive(announcement);
     },
     debounceMs: 300,
     enabled: true,
@@ -539,15 +555,20 @@ export function MissionVoting({ game, players, currentPlayer, onVote }: MissionV
         setMyVote(vote);
         await onVote(vote);
         setHasVoted(true);
+        
+        // Announce vote submission to screen readers
+        announcePolite(`You voted ${vote}. Waiting for other team members.`);
       } catch (error) {
         // Reset on error
         setMyVote(null);
         console.error('Failed to submit mission vote:', error);
+        // Announce error to screen readers
+        announceAssertive('Failed to submit vote. Please try again.');
       } finally {
         setIsSubmitting(false);
       }
     },
-    [hasVoted, isSubmitting, isEvil, onVote]
+    [hasVoted, isSubmitting, isEvil, onVote, announcePolite, announceAssertive]
   );
 
   const handlePass = useCallback(() => handleVote('pass'), [handleVote]);
@@ -556,12 +577,13 @@ export function MissionVoting({ game, players, currentPlayer, onVote }: MissionV
   // Loading state
   if (votesLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
+      <div className="flex flex-col items-center justify-center py-12" aria-busy="true" aria-label="Loading mission status">
+        <AnnouncerRegion />
         <div className="relative">
           <div className="w-16 h-16 rounded-full border-4 border-stone-700" />
           <div className="absolute inset-0 w-16 h-16 rounded-full border-4 border-t-blue-500 animate-spin" />
         </div>
-        <p className="mt-4 text-gray-400 font-medium">Loading mission status...</p>
+        <p className="mt-4 text-gray-400 font-medium" aria-live="polite">Loading mission status...</p>
       </div>
     );
   }
@@ -569,7 +591,8 @@ export function MissionVoting({ game, players, currentPlayer, onVote }: MissionV
   // Show results when voting is complete
   if (showResults && voteResults) {
     return (
-      <div className="max-w-lg mx-auto">
+      <div className="max-w-lg mx-auto" aria-label="Mission results">
+        <AnnouncerRegion />
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold text-white mb-2">Mission Complete</h2>
           <p className="text-gray-400">Round {game.current_round}</p>
@@ -580,10 +603,11 @@ export function MissionVoting({ game, players, currentPlayer, onVote }: MissionV
   }
 
   return (
-    <div className="max-w-lg mx-auto">
+    <div className="max-w-lg mx-auto" role="region" aria-label="Mission voting">
+      <AnnouncerRegion />
       {/* Header */}
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-white mb-4">Mission Vote</h2>
+        <h2 className="text-2xl font-bold text-white mb-4" id="mission-vote-heading">Mission Vote</h2>
         
         {/* Mission info card */}
         <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-blue-900/40 to-indigo-900/40 border-2 border-blue-500/50 rounded-2xl">

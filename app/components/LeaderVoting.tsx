@@ -13,6 +13,11 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useVoteSubscription } from '~/hooks/useVoteSubscription';
 import { useVoteCompletion } from '~/hooks/useVoteCompletion';
+import {
+  useScreenReaderAnnouncer,
+  formatVoteResultAnnouncement,
+  formatTurnAnnouncement,
+} from '~/hooks/useScreenReaderAnnouncer';
 import type { Game, Player, LeaderVote, VoteResult } from '~/types/game';
 
 // =============================================================================
@@ -363,6 +368,9 @@ export function LeaderVoting({ game, players, currentPlayer, onVote }: LeaderVot
   const [showResults, setShowResults] = useState(false);
   const [voteResults, setVoteResults] = useState<VoteResults | null>(null);
 
+  // Screen reader announcer
+  const { announcePolite, announceAssertive, AnnouncerRegion } = useScreenReaderAnnouncer();
+
   // Refs for double-click prevention
   const lastClickRef = useRef<number>(0);
   const CLICK_DEBOUNCE_MS = 500;
@@ -381,6 +389,15 @@ export function LeaderVoting({ game, players, currentPlayer, onVote }: LeaderVot
       const results = calculateResults(votes);
       setVoteResults(results);
       setShowResults(true);
+      
+      // Announce results to screen readers
+      const announcement = formatVoteResultAnnouncement(
+        'leader',
+        results.approved ? 'approved' : 'rejected',
+        results.yesCount,
+        results.noCount
+      );
+      announceAssertive(announcement);
     },
     debounceMs: 300,
     enabled: true,
@@ -427,15 +444,20 @@ export function LeaderVoting({ game, players, currentPlayer, onVote }: LeaderVot
         setMyVote(vote);
         await onVote(approve);
         setHasVoted(true);
+        
+        // Announce vote submission to screen readers
+        announcePolite(`You voted to ${approve ? 'approve' : 'reject'}. Waiting for other votes.`);
       } catch (error) {
         // Reset on error
         setMyVote(null);
         console.error('Failed to submit vote:', error);
+        // Announce error to screen readers
+        announceAssertive('Failed to submit vote. Please try again.');
       } finally {
         setIsSubmitting(false);
       }
     },
-    [hasVoted, isSubmitting, onVote]
+    [hasVoted, isSubmitting, onVote, announcePolite, announceAssertive]
   );
 
   const handleApprove = useCallback(() => handleVote(true), [handleVote]);
@@ -444,12 +466,13 @@ export function LeaderVoting({ game, players, currentPlayer, onVote }: LeaderVot
   // Loading state
   if (votesLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
+      <div className="flex flex-col items-center justify-center py-12" aria-busy="true" aria-label="Loading vote status">
+        <AnnouncerRegion />
         <div className="relative">
           <div className="w-16 h-16 rounded-full border-4 border-stone-700" />
           <div className="absolute inset-0 w-16 h-16 rounded-full border-4 border-t-blue-500 animate-spin" />
         </div>
-        <p className="mt-4 text-gray-400 font-medium">Loading vote status...</p>
+        <p className="mt-4 text-gray-400 font-medium" aria-live="polite">Loading vote status...</p>
       </div>
     );
   }
@@ -457,7 +480,8 @@ export function LeaderVoting({ game, players, currentPlayer, onVote }: LeaderVot
   // Show results when voting is complete
   if (showResults && voteResults) {
     return (
-      <div className="max-w-lg mx-auto">
+      <div className="max-w-lg mx-auto" aria-label="Vote results">
+        <AnnouncerRegion />
         {/* Header with leader info */}
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold text-white mb-2">Leader Vote Complete</h2>
@@ -474,10 +498,11 @@ export function LeaderVoting({ game, players, currentPlayer, onVote }: LeaderVot
   const rejectionWarning = game.rejection_count >= 2 ? 'critical' : game.rejection_count >= 1 ? 'warning' : 'normal';
 
   return (
-    <div className="max-w-lg mx-auto">
+    <div className="max-w-lg mx-auto" role="region" aria-label="Leader voting">
+      <AnnouncerRegion />
       {/* Header */}
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-white mb-4">Vote for Leader</h2>
+        <h2 className="text-2xl font-bold text-white mb-4" id="leader-vote-heading">Vote for Leader</h2>
         
         {/* Leader card with crown */}
         <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-amber-900/40 to-yellow-900/40 border-2 border-amber-500/50 rounded-2xl">
