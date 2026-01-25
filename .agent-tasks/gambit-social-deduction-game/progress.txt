@@ -925,3 +925,19 @@
   - `shouldRevealAllData` returns true only when game.status === 'finished'
   - Effects index.ts needed to use ES module imports instead of CommonJS require for test compatibility
   - Note: Supabase RLS policies are a separate database concern - utilities provide the filtering logic
+
+---
+## 2026-01-25 - test-security
+- **What was implemented**: Comprehensive security tests for game integrity
+- **Files changed**: 
+  - `app/security/security.test.ts` (created - 27 tests, 5 skipped/todo)
+- **Learnings:**
+  - Security tests folder created at `app/security/` for security-focused test suites
+  - Tests verify routes use authenticated user ID from Supabase auth, ignoring any spoofed IDs in request body
+  - `gameService.getPlayer(gameId, user.id)` pattern ensures player lookup uses authenticated user ID
+  - Vote/action security is layered: routes check auth → services check game membership → services check authorization
+  - Phase validation happens in services (VoteProcessor, ActionProcessor) not routes - routes delegate to services
+  - Rate limiting tests marked as `it.todo()` since `security-rate-limiting` story is not yet implemented
+  - RLS policy tests are skipped (`it.skip`) - they require real Supabase connection, not unit testable
+  - Additional authorization checks: good players can't vote fail, dead players can't act, only host can start, only leader can select team
+  - Impersonation prevention: routes ignore any `userId`/`playerId`/`hostId` in request body, always use authenticated user
