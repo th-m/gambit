@@ -29,6 +29,8 @@ interface GameFlowContextValue {
   game: Game | null;
   /** All players in the game */
   players: Player[];
+  /** Game actions for current round (for tracking used actions) */
+  actions: GameAction[];
   /** Game context for action/effect evaluation */
   ctx: GameCtx | null;
   /** Whether initial data is being loaded */
@@ -424,6 +426,7 @@ export function GameFlowProvider({
   const value: GameFlowContextValue = {
     game,
     players,
+    actions,
     ctx,
     isLoading,
     error,

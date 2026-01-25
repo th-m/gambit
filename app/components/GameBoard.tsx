@@ -14,6 +14,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router';
 import { useGameFlow } from '~/contexts/GameFlowContext';
+import { ActionPanel } from '~/components/ActionPanel';
 import type { GamePhase, Player, Game } from '~/types/game';
 
 // =============================================================================
@@ -172,76 +173,7 @@ export function CharacterInfoPanel({ player, players }: CharacterInfoPanelProps)
   );
 }
 
-// =============================================================================
-// Action Panel Component (Placeholder)
-// =============================================================================
-
-interface ActionPanelProps {
-  player: Player;
-  game: Game;
-}
-
-export function ActionPanel({ player, game }: ActionPanelProps) {
-  // Characters with special actions
-  const charactersWithActions = ['Assassin', 'Guardian', 'Fixer', 'Tracker', 'Saboteur'];
-  const hasActions = charactersWithActions.includes(player.character ?? '');
-
-  if (!hasActions) return null;
-
-  // Get available actions based on phase (placeholder - will be enhanced in component-action-panel story)
-  const getActionInfo = (character: string | null, phase: string | null) => {
-    if (!character || !phase) return null;
-
-    const actionMap: Record<string, { phases: string[]; name: string; description: string }> = {
-      Assassin: {
-        phases: ['mission_voting', 'assassination'],
-        name: 'Assassinate',
-        description: 'Eliminate a player. If you find the Seer, Evil wins!',
-      },
-      Guardian: {
-        phases: ['mission_voting'],
-        name: 'Protect',
-        description: 'Protect a player from assassination this round.',
-      },
-      Fixer: {
-        phases: ['mission_voting'],
-        name: 'Rig Vote',
-        description: 'Force the current mission to pass.',
-      },
-      Tracker: {
-        phases: ['selecting_team'],
-        name: 'Plant Beeper',
-        description: 'Tag two players (1 good, 1 evil) to detect alignment on vote.',
-      },
-      Saboteur: {
-        phases: ['mission_voting'],
-        name: 'Sabotage',
-        description: 'Add an extra fail vote to the mission.',
-      },
-    };
-
-    const action = actionMap[character];
-    if (!action || !action.phases.includes(phase)) return null;
-    return action;
-  };
-
-  const actionInfo = getActionInfo(player.character, game.phase);
-
-  return (
-    <div className="bg-stone-800 rounded-xl p-4 border border-stone-700">
-      <h3 className="font-semibold mb-2 text-gray-300">Special Ability</h3>
-      {actionInfo ? (
-        <div>
-          <p className="text-amber-400 font-semibold">{actionInfo.name}</p>
-          <p className="text-sm text-gray-400 mt-1">{actionInfo.description}</p>
-          <p className="text-xs text-green-400 mt-2">Available this phase</p>
-        </div>
-      ) : (
-        <p className="text-sm text-gray-500">No actions available in this phase</p>
-      )}
-    </div>
-  );
-}
+// ActionPanel is now imported from ~/components/ActionPanel
 
 // =============================================================================
 // Phase Indicator Component
@@ -370,7 +302,7 @@ export interface GameBoardProps {
 }
 
 export function GameBoard({ renderPhase }: GameBoardProps) {
-  const { game, players, currentPlayer, isLoading, error } = useGameFlow();
+  const { game, players, actions, ctx, currentPlayer, isLoading, error, executeAction } = useGameFlow();
 
   // Initialize vibration listener for beepered players
   // Note: useVibration hook will be implemented in hook-vibration story
@@ -490,7 +422,16 @@ export function GameBoard({ renderPhase }: GameBoardProps) {
           {/* Sidebar */}
           <div className="space-y-4">
             <CharacterInfoPanel player={currentPlayer} players={players} />
-            <ActionPanel player={currentPlayer} game={game} />
+            {ctx && (
+              <ActionPanel
+                player={currentPlayer}
+                game={game}
+                players={players}
+                actions={actions}
+                ctx={ctx}
+                onExecuteAction={executeAction}
+              />
+            )}
             <PlayerList
               players={players}
               currentPlayerId={currentPlayer.id}
