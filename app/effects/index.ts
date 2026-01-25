@@ -10,7 +10,10 @@ export {
   registerAppearsAsSeerEffect,
 } from './appearsAsSeer';
 
-// Note: appears_as_good effect will be added in a future story (effect-appears-as-good)
+export {
+  appearsAsGoodEffect,
+  registerAppearsAsGoodEffect,
+} from './appearsAsGood';
 
 /**
  * Register all perception effects with the EffectRegistry singleton.
@@ -19,7 +22,8 @@ export {
 export function registerAllEffects(): void {
   // Import and call individual registration functions
   const { registerAppearsAsSeerEffect } = require('./appearsAsSeer');
+  const { registerAppearsAsGoodEffect } = require('./appearsAsGood');
+  
   registerAppearsAsSeerEffect();
-
-  // Note: registerAppearsAsGoodEffect will be added when that effect is implemented
+  registerAppearsAsGoodEffect();
 }
