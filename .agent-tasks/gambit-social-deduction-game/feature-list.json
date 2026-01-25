@@ -407,7 +407,7 @@
         "Oracle sees Phantom as Seer candidate",
         "Does not affect actual Seer's perception"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "effect-appears-as-good",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 41,
+    "completed_features": 42,
     "categories": {
       "functional": 68,
       "visual": 9,

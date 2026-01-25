@@ -635,3 +635,19 @@
   - Placeholder components can reference useGameFlow() even if full UI is pending separate stories
   - GameOver screen reveals all player roles after game ends - iterate players with team-based styling
   - Error states: check authentication (currentUserId null), game existence, and game membership
+
+---
+## 2026-01-25 - effect-appears-as-seer
+- **What was implemented**: The appears_as_seer effect for Phantom character, making it appear as a Seer candidate to the Oracle
+- **Files changed**: 
+  - `app/effects/appearsAsSeer.ts` (created - effect definition)
+  - `app/effects/appearsAsSeer.test.ts` (created - 19 unit tests)
+  - `app/effects/index.ts` (created - module exports)
+- **Learnings:**
+  - Effects folder created at `app/effects/` for effect implementations (parallel to actions folder)
+  - EffectDefinition includes: id, name, description, hooks (empty for passive effects), modifiers array
+  - Perception effects use the `modifiers` array with type `appears_as_seer` or `appears_as_good`
+  - CharacterRegistry already had info resolution logic (`getSeerCandidates`) that checks for this effect - just needed registration
+  - Integration tests for effects need both this effect AND `appears_as_good` registered for CharacterRegistry to work correctly
+  - For tests, can inline-register effects that aren't implemented yet using `effectRegistry.register()` helper
+  - Player type requires `created_at` field - check type definitions when creating test helpers
