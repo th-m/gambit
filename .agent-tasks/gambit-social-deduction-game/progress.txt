@@ -1178,3 +1178,41 @@
   - Components should have `aria-label` on regions and `aria-busy` during loading states
   - Phase descriptions should include context like rejection count and consequences ("Final chance before automatic evil point")
   - Announcing errors via assertive live region ensures users know when actions fail
+
+---
+## 2026-01-25 - perf-real-time-efficiency
+- **What was implemented**: Optimized real-time subscriptions with batched updates, reconnection handling, and memory leak prevention
+- **Files changed**: 
+  - `app/hooks/useGameSubscription.ts` (updated - reducer pattern, reconnection, abort controller)
+  - `app/hooks/useGameSubscription.test.tsx` (updated - tests for new implementation)
+  - `app/contexts/GameFlowContext.tsx` (updated - same optimizations as useGameSubscription)
+  - `app/contexts/GameFlowContext.test.tsx` (updated - tests for event-specific handlers)
+- **Learnings:**
+  - Use `useReducer` instead of multiple `useState` calls to batch related state updates into single re-render
+  - `BATCH_UPDATE` action type allows updating multiple state fields atomically
+  - Event-specific subscriptions (`event: 'UPDATE'` vs `event: '*'`) are more efficient and explicit
+  - Reconnection with exponential backoff: `delay * Math.pow(2, attempts - 1)` prevents thundering herd
+  - `isMountedRef` pattern prevents state updates after unmount - check in all async callbacks
+  - `AbortController` allows cancellation of pending fetches on unmount
+  - `safeDispatch` wrapper only dispatches if mounted, preventing "Can't perform state update on unmounted component"
+  - Subscribe callback receives status string: 'SUBSCRIBED', 'CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'
+  - Parallel fetch with `Promise.all` improves load time but requires checking each result's error separately
+  - Export `ConnectionStatus` type for consumers to monitor subscription health
+  - Mock channel's `_trigger` must match event name exactly (e.g., 'UPDATE' not '*')
+
+---
+## 2026-01-25 - e2e-good-victory
+- **What was implemented**: End-to-end test for good team victory covering complete game flow
+- **Files changed**: 
+  - `app/e2e/good-victory.test.ts` (created - 8 tests covering full game flow)
+- **Learnings:**
+  - E2E tests folder created at `app/e2e/` for end-to-end integration tests
+  - E2E tests use same service instances as action integration tests (GameService, VoteProcessor, ActionProcessor, StateValidator)
+  - Character assignment can be done manually via `gameService.updatePlayer()` for deterministic test scenarios
+  - Players must be added to game before changing status from 'lobby' to 'playing' (GameService.addPlayer checks status)
+  - `setupGameWithPlayers` pattern: create game → add players → assign characters → update game status
+  - Mission flow helper functions: `approveLeader()`, `selectTeam()`, `runSuccessfulMission()` simplify repetitive test code
+  - End reason for Assassin failing to identify Seer is "Good completed 3 successful missions" (not "Seer survived" or similar)
+  - Test findPlayerByCharacter and findPlayersByTeam helpers enable flexible player lookup in tests
+  - VoteProcessor handles leader vote results and mission vote results, advancing game state appropriately
+  - StateValidator.validateGameStart checks both host permission and player count (5-10)

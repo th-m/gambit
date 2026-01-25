@@ -1196,7 +1196,7 @@
         "No memory leaks from subscriptions",
         "Reconnection handling for dropped connections"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "perf-bundle-size",
@@ -1223,7 +1223,7 @@
         "Assassin picks wrong target",
         "Good team declared winner"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "e2e-evil-victory-missions",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 86,
-    "completed_features": 72,
+    "completed_features": 74,
     "categories": {
       "functional": 68,
       "visual": 9,
