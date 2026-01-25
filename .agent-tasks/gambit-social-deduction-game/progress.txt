@@ -665,3 +665,16 @@
   - Saboteur already had `effects: ['appears_as_good']` in CharacterRegistry - effect was already wired up, just needed the EffectDefinition
   - Integration tests should verify both effects work together in complex scenarios (Seer + Oracle + Saboteur + Phantom)
   - Use `registerAppearsAsSeerEffect()` from the actual module in tests instead of inline registration for cleaner test setup
+
+---
+## 2026-01-25 - component-lobby
+- **What was implemented**: Reusable Lobby component extracted from lobby page
+- **Files changed**: 
+  - `app/components/Lobby.tsx` (created - reusable lobby component)
+  - `app/routes/games.$game.tsx` (updated - uses Lobby component)
+- **Learnings:**
+  - Extract UI components from pages for better reusability - page handles routing/data, component handles presentation
+  - Component props pattern: pass game, players, currentUserId, callbacks (onStartGame, onLeaveGame), and loading/error states
+  - Use `useCallback` for callback props passed to child components to prevent unnecessary re-renders
+  - ARIA attributes (`aria-label`, `aria-busy`, `role="alert"`) improve accessibility for screen readers
+  - Page-level concerns (loaders, navigation, real-time subscriptions) stay in the page; pure presentation logic goes in the component

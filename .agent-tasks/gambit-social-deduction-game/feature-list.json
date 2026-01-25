@@ -775,7 +775,7 @@
         "Leave button removes player from game",
         "Loading states for actions"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "component-gameboard",
@@ -1324,8 +1324,8 @@
     }
   ],
   "metadata": {
-    "total_features": 85,
-    "completed_features": 43,
+    "total_features": 86,
+    "completed_features": 47,
     "categories": {
       "functional": 68,
       "visual": 9,
