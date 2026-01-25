@@ -496,7 +496,7 @@
         "Returns 400 for game full or started",
         "Returns 404 for game not found"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "api-games-start",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 28,
+    "completed_features": 29,
     "categories": {
       "functional": 68,
       "visual": 9,

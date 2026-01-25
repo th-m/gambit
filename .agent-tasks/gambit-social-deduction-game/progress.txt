@@ -398,3 +398,16 @@
   - Merge auth headers from supabase client with response headers to maintain session cookies
   - Type safety: Use `satisfies` operator with interface types for response bodies
   - GameService singleton (`gameService`) persists in-memory data across requests during development
+
+---
+## 2026-01-25 - api-games-join
+- **What was implemented**: POST /api/games/:gameId/join endpoint for joining existing games
+- **Files changed**: 
+  - `app/routes/api.games.$gameId.join.tsx` (created)
+- **Learnings:**
+  - Dynamic route params use `$paramName` syntax in file name: `api.games.$gameId.join.tsx` → `/api/games/:gameId/join`
+  - Access params via `params.gameId` in the action function's `ActionFunctionArgs`
+  - StateValidator provides reusable validation logic (`validateJoinGame`) that checks game exists, is in lobby, and has space
+  - GameService.addPlayer handles duplicate joins gracefully by returning existing player
+  - Map error messages to status codes: 404 for not found, 400 for invalid state (full/started), 401 for unauth
+  - Always validate gameId param exists before using it to avoid runtime errors
