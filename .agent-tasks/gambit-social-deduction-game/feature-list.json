@@ -1051,7 +1051,7 @@
         "Current leader marked with crown",
         "Team members highlighted during mission"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "ui-game-over-screen",
@@ -1065,7 +1065,7 @@
         "End reason prominently shown",
         "Call to action buttons styled"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "ui-responsive-game",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 86,
-    "completed_features": 66,
+    "completed_features": 68,
     "categories": {
       "functional": 68,
       "visual": 9,

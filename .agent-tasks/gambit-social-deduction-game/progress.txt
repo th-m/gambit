@@ -1057,3 +1057,39 @@
   - Action cards should include usage hints ("1x" for single-use, "Passive" for effects) to help players understand ability limitations
   - Known player pills with contextual icons (😈 for evil, 👁️ for Seer) improve information scanning at a glance
   - Structuring abilities in card-like containers with consistent spacing creates clear visual hierarchy
+
+---
+## 2026-01-25 - ui-player-selection
+- **What was implemented**: Enhanced visual design for player selection interfaces in PlayerList, TeamSelection, and TargetSelector components
+- **Files changed**: 
+  - `app/components/PlayerList.tsx` (updated - added PlayerCard, PlayerAvatar, grid layout, improved visual states)
+  - `app/components/TeamSelection.tsx` (updated - enhanced card design, selection progress, waiting view)
+  - `app/components/TargetSelector.tsx` (updated - improved card design with selection order)
+  - `app/components/PlayerList.test.tsx` (updated - fixed tests for new visual structure)
+  - `app/components/game-components.test.tsx` (updated - fixed tests for new visual structure)
+- **Learnings:**
+  - Deterministic avatar colors based on player ID use simple hash: `id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length`
+  - Player cards with gradient avatars (`bg-gradient-to-br from-{color}-500 to-{color}-700`) provide visual distinction
+  - Eliminated players use grayscale filter + skull icon for clear visual distinction: `grayscale opacity-50`
+  - Selection ring highlights (`ring-2 ring-blue-400 ring-offset-2 ring-offset-stone-800`) make team members stand out
+  - Crown badge positioning uses absolute positioning: `absolute -top-2 -right-2` for leader indicator
+  - Grid layout with consistent card sizing (`w-14 h-14` avatars) creates clean selection grids
+  - Tests looking for split text ("Selected: X / Y") need to use `.closest('span')?.textContent` to get full content
+  - Use aria-pressed for toggle buttons in selection interfaces for accessibility
+
+---
+## 2026-01-25 - ui-game-over-screen
+- **What was implemented**: Enhanced visual design for game over screen with dramatic animations and improved styling
+- **Files changed**: 
+  - `app/components/GameOver.tsx` (updated - comprehensive visual enhancement)
+- **Learnings:**
+  - Character icon configuration objects centralize visual metadata (icon, description) for reuse across components
+  - Confetti animation variants (multiple shapes, stagger, sway) create richer visual effects than single-type confetti
+  - Team-themed backgrounds use layered effects: base gradient + radial glow + particle overlay for depth
+  - `text-transparent bg-clip-text bg-gradient-to-r` creates striking gradient text effects for winner banners
+  - Box shadows with team colors (`shadow-[0_0_60px_rgba(59,130,246,0.4)]`) create glow effects
+  - Animation keyframes with index-based variants (`confetti-fall-0`, `confetti-fall-1`) provide variety in looping animations
+  - Player role cards benefit from hover states and current-player highlighting (ring with offset)
+  - Stats footer with divided sections (rounds, scores, players) provides clear game summary
+  - Use `CharacterName` type (not `CharacterId`) from game.ts for character-related type definitions
+  - End reason formatting should include icons for quick visual scanning alongside explanatory text
