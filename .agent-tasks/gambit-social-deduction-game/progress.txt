@@ -1027,3 +1027,33 @@
   - Error state screens with icon + message + action button pattern improves user experience
   - When updating visual design, tests using CSS class selectors (querySelector) need updating to match new classes
   - Use attribute selectors `[class*="keyword"]` in tests for more flexible class matching
+
+---
+## 2026-01-25 - ui-voting-interfaces
+- **What was implemented**: Enhanced visual design for leader and mission voting interfaces
+- **Files changed**: 
+  - `app/components/LeaderVoting.tsx` (enhanced - gradient buttons, crown display, rejection indicators, animated waiting state)
+  - `app/components/MissionVoting.tsx` (enhanced - gradient buttons with icons, mission info card, suspenseful card reveal)
+  - `app/components/game-components.test.tsx` (updated - tests to match new text and visual structure)
+- **Learnings:**
+  - Gradient buttons with icons (`bg-gradient-to-br from-emerald-500 to-green-600`) provide clear visual hierarchy and call-to-action
+  - Inline SVG icons as React components (CheckIcon, XIcon, CrownIcon, etc.) allow for consistent styling with className props
+  - Visual indicator dots for rejection count (3 dots, filled/empty) are more intuitive than text "X/3"
+  - Suspenseful card reveal animation with staggered delays (`transitionDelay: index * 400`) creates engaging UX for vote results
+  - WaitingMessage component with player vote indicators (blue dot = voted, stone dot = waiting) shows real-time progress
+  - Tests using regex like `/2 of 5 votes cast/` fail when text is split across spans - use container.querySelector or multiple getByText calls instead
+  - Team membership indicator with pulse animation (`animate-pulse`) draws attention to player's role in the mission
+
+---
+## 2026-01-25 - ui-character-cards
+- **What was implemented**: Enhanced CharacterInfoPanel with character icons, special abilities display, and improved visual design
+- **Files changed**: 
+  - `app/components/GameBoard.tsx` (updated - CHARACTER_ICONS, ACTION_DISPLAYS, EFFECT_DISPLAYS configs, enhanced CharacterInfoPanel)
+- **Learnings:**
+  - Character icon configuration objects (CHARACTER_ICONS) centralize visual properties: icon emoji, background gradient, icon color
+  - Separate display configs for actions (ACTION_DISPLAYS) and effects (EFFECT_DISPLAYS) provide reusable UI metadata
+  - Use `bg-gradient-to-br from-{color}-600 to-{color}-700` for icon backgrounds to create depth and visual interest
+  - Team-based glow effects (`shadow-blue-500/20`, `shadow-red-500/20`) provide subtle but effective team color reinforcement
+  - Action cards should include usage hints ("1x" for single-use, "Passive" for effects) to help players understand ability limitations
+  - Known player pills with contextual icons (😈 for evil, 👁️ for Seer) improve information scanning at a glance
+  - Structuring abilities in card-like containers with consistent spacing creates clear visual hierarchy

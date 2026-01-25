@@ -1023,7 +1023,7 @@
         "Vote result reveal animation",
         "Clear visual for your vote vs waiting"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "ui-character-cards",
@@ -1037,7 +1037,7 @@
         "Special abilities listed clearly",
         "Known information displayed appropriately"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "ui-player-selection",
