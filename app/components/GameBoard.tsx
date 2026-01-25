@@ -15,7 +15,15 @@ import { useEffect } from 'react';
 import { Link } from 'react-router';
 import { useGameFlow } from '~/contexts/GameFlowContext';
 import { ActionPanel } from '~/components/ActionPanel';
-import type { GamePhase, Player, Game } from '~/types/game';
+import { characterRegistry } from '~/registry/CharacterRegistry';
+import type {
+  GamePhase,
+  Player,
+  Game,
+  GameContext,
+  GameModifier,
+  PlayerStatus,
+} from '~/types/game';
 
 // =============================================================================
 // Score Board Component
@@ -110,62 +118,103 @@ export function ScoreBoard({ game }: ScoreBoardProps) {
 interface CharacterInfoPanelProps {
   player: Player;
   players: Player[];
+  game: Game;
+  modifiers?: GameModifier[];
+  statuses?: PlayerStatus[];
 }
 
-export function CharacterInfoPanel({ player, players }: CharacterInfoPanelProps) {
+export function CharacterInfoPanel({
+  player,
+  players,
+  game,
+  modifiers = [],
+  statuses = [],
+}: CharacterInfoPanelProps) {
   const teamColor = player.team === 'good' ? 'text-blue-400' : 'text-red-400';
   const teamBgColor = player.team === 'good' ? 'bg-blue-900/20' : 'bg-red-900/20';
   const teamBorderColor = player.team === 'good' ? 'border-blue-700' : 'border-red-700';
 
-  // Get character description (placeholder - will be enhanced in component-character-info story)
-  const getCharacterDescription = (character: string | null): string => {
-    switch (character) {
-      case 'Seer':
-        return 'Knows who the evil players are (except Saboteur)';
-      case 'Oracle':
-        return 'Knows who the Seer candidates are';
-      case 'Guardian':
-        return 'Can protect one player from assassination';
-      case 'Tracker':
-        return 'Can plant beeepers on players to detect alignment';
-      case 'Villager':
-        return 'A loyal member of the good team';
-      case 'Soldier':
-        return 'A loyal member of the good team';
-      case 'Assassin':
-        return 'Can assassinate a player, wins if they find the Seer';
-      case 'Fixer':
-        return 'Can rig one mission vote to pass';
-      case 'Phantom':
-        return 'Appears as a Seer candidate to the Oracle';
-      case 'Saboteur':
-        return 'Hidden from the Seer, can add extra fail votes';
-      case 'Minion':
-        return 'A member of the evil team';
-      default:
-        return 'Unknown character';
-    }
+  // Build game context for resolving character info with effects applied
+  const ctx: GameContext = {
+    game,
+    players,
+    currentPlayer: player,
+    modifiers,
+    statuses,
   };
+
+  // Get character definition from registry
+  const characterDef = player.character
+    ? characterRegistry.get(player.character)
+    : undefined;
+
+  // Resolve character info with effects applied (Seer sees evil except Saboteur, Oracle sees Seer candidates including Phantom)
+  const resolvedInfo = characterRegistry.resolveInfo(ctx);
+
+  // Check if info is unreliable (e.g., Oracle with multiple Seer candidates)
+  const isUnreliable =
+    resolvedInfo.knownPlayers &&
+    resolvedInfo.knownPlayers.length > 1 &&
+    resolvedInfo.knownPlayerLabels &&
+    Object.values(resolvedInfo.knownPlayerLabels).some((label) =>
+      label.includes('?')
+    );
 
   return (
     <div className={`rounded-xl p-4 border ${teamBgColor} ${teamBorderColor}`}>
+      {/* Character name and team */}
       <h3 className="font-semibold mb-2 text-gray-300">Your Role</h3>
       <p className={`text-xl font-bold ${teamColor}`}>{player.character}</p>
       <p className="text-sm text-gray-400 capitalize mb-3">{player.team} Team</p>
-      <p className="text-sm text-gray-400">{getCharacterDescription(player.character)}</p>
 
-      {/* Known information - will be enhanced in component-character-info story */}
-      {player.team === 'evil' && (
+      {/* Character description from registry */}
+      <p className="text-sm text-gray-400">
+        {characterDef?.description ?? 'Unknown character'}
+      </p>
+
+      {/* Resolved information with effects applied */}
+      {resolvedInfo.knownPlayers && resolvedInfo.knownPlayers.length > 0 && (
         <div className="mt-3 pt-3 border-t border-stone-700">
-          <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Evil Team</p>
-          <div className="flex flex-wrap gap-1">
-            {players
-              .filter((p) => p.team === 'evil' && p.id !== player.id)
-              .map((p) => (
-                <span key={p.id} className="text-sm text-red-400">
-                  {p.display_name}
-                </span>
-              ))}
+          {/* Unreliable info warning for uncertain knowledge (e.g., Oracle with Phantom) */}
+          {isUnreliable && (
+            <div className="flex items-center gap-1 mb-2">
+              <span className="text-yellow-500 text-xs">⚠</span>
+              <span className="text-xs text-yellow-500/80">
+                Information may be unreliable
+              </span>
+            </div>
+          )}
+
+          {/* Description of what they know */}
+          <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">
+            {resolvedInfo.description}
+          </p>
+
+          {/* Known players with labels */}
+          <div className="flex flex-wrap gap-2">
+            {resolvedInfo.knownPlayers.map((playerId) => {
+              const knownPlayer = players.find((p) => p.id === playerId);
+              const label = resolvedInfo.knownPlayerLabels?.[playerId];
+              const isEvil = label?.toLowerCase().includes('evil');
+              const isSeer = label?.toLowerCase().includes('seer');
+              const labelColor = isEvil
+                ? 'text-red-400 bg-red-900/30 border-red-700'
+                : isSeer
+                  ? 'text-purple-400 bg-purple-900/30 border-purple-700'
+                  : 'text-gray-400 bg-stone-700/30 border-stone-600';
+
+              return (
+                <div
+                  key={playerId}
+                  className={`flex items-center gap-1 px-2 py-1 rounded border text-sm ${labelColor}`}
+                >
+                  <span>{knownPlayer?.display_name ?? 'Unknown'}</span>
+                  {label && (
+                    <span className="text-xs opacity-75">({label})</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -421,7 +470,13 @@ export function GameBoard({ renderPhase }: GameBoardProps) {
 
           {/* Sidebar */}
           <div className="space-y-4">
-            <CharacterInfoPanel player={currentPlayer} players={players} />
+            <CharacterInfoPanel
+              player={currentPlayer}
+              players={players}
+              game={game}
+              modifiers={ctx?.modifiers}
+              statuses={ctx?.statuses}
+            />
             {ctx && (
               <ActionPanel
                 player={currentPlayer}
