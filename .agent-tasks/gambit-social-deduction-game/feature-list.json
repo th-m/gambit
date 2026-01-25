@@ -434,7 +434,7 @@
         "Randomizes player order (seat_order)",
         "Assigns crown_index randomly"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-util-character-assignment",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 25,
+    "completed_features": 26,
     "categories": {
       "functional": 68,
       "visual": 9,

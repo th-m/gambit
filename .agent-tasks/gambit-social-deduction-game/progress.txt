@@ -1,5 +1,6 @@
 ## Codebase Patterns
 
+- **Utils location**: Game-specific utility functions go in `app/utils/` (e.g., characterAssignment.ts)
 - **Services location**: Business logic services go in `app/services/` with class + singleton pattern (same as registries)
 - **TypeScript types location**: Core game types go in `app/types/game.ts`, Supabase generated types in `app/types/supabase.ts`
 - **Validation command**: Use `npm run validate` to run both typecheck and tests
@@ -350,3 +351,17 @@
   - Players must be added BEFORE setting game status to 'playing' (GameService.addPlayer checks status)
   - Protection blocking is tested by: protect first → assassinate → verify target still alive
   - Modifier integration tested by: add modifier → submit votes → verify result reflects modifier (force_pass, extra_fail)
+
+---
+## 2026-01-25 - util-character-assignment
+- **What was implemented**: Character assignment algorithm for game start
+- **Files changed**: 
+  - `app/utils/characterAssignment.ts` (created)
+- **Learnings:**
+  - Utils folder created at `app/utils/` for game-specific utility functions
+  - Team composition stored as constant lookup table (`TEAM_COUNTS`) for O(1) access
+  - Fisher-Yates shuffle provides unbiased randomization - shuffle both characters and player IDs
+  - `selectCharacters` ensures required character is included, then fills with shuffled optional characters
+  - Return type `CharacterAssignmentResult` bundles player updates and crown_index for atomic game start
+  - Player updates use `PlayerUpdate` type from game.ts for type safety
+  - Crown index is 0 to N-1, randomly selected independently from seat order
