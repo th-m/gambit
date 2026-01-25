@@ -455,44 +455,38 @@ describe('GameFlowContext - Real-time Updates', () => {
       expect(mockChannels.length).toBe(4);
     });
 
-    // Simulate game UPDATE event
+    // Simulate game UPDATE event (using event-specific handler)
     const gameChannel = mockChannels[0];
     const updatedGame = createTestGame({ phase: 'selecting_team', id: 'updated-game-id' });
 
     await act(async () => {
-      gameChannel._trigger('games', '*', {
-        eventType: 'UPDATE',
-        new: updatedGame,
-      });
+      // Event-specific trigger format: table, event, payload with 'new' field
+      gameChannel._trigger('games', 'UPDATE', { new: updatedGame });
     });
 
     expect(screen.getByTestId('game-id').textContent).toBe('updated-game-id');
   });
 
-  it('updates game state on game INSERT event', async () => {
+  it('exposes connectionStatus in context', async () => {
     const initialGame = createTestGame();
+
+    // Create custom consumer to test connectionStatus
+    function ConnectionStatusConsumer() {
+      const { connectionStatus } = useGameFlow();
+      return <div data-testid="connection-status">{connectionStatus}</div>;
+    }
 
     render(
       <GameFlowProvider gameId="game-123" userId="user-1" initialGame={initialGame}>
-        <TestConsumer />
+        <ConnectionStatusConsumer />
       </GameFlowProvider>
     );
 
+    // Initial connection status should be 'connecting' or 'connected'
     await waitFor(() => {
-      expect(mockChannels.length).toBe(4);
+      const status = screen.getByTestId('connection-status').textContent;
+      expect(['connecting', 'connected']).toContain(status);
     });
-
-    const gameChannel = mockChannels[0];
-    const newGame = createTestGame({ id: 'new-game-id' });
-
-    await act(async () => {
-      gameChannel._trigger('games', '*', {
-        eventType: 'INSERT',
-        new: newGame,
-      });
-    });
-
-    expect(screen.getByTestId('game-id').textContent).toBe('new-game-id');
   });
 });
 

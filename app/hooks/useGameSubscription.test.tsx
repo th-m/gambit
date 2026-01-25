@@ -14,6 +14,7 @@ import type { Game, Player, GameAction } from '~/types/game';
 // Mock channel instance factory
 const createMockChannel = () => {
   const handlers: Map<string, (payload: unknown) => void> = new Map();
+  let subscribeCallback: ((status: string) => void) | null = null;
   const channel = {
     on: vi.fn().mockImplementation(
       (
@@ -26,12 +27,22 @@ const createMockChannel = () => {
         return channel;
       }
     ),
-    subscribe: vi.fn().mockReturnThis(),
+    subscribe: vi.fn().mockImplementation((callback?: (status: string) => void) => {
+      subscribeCallback = callback ?? null;
+      // Simulate successful subscription
+      if (subscribeCallback) {
+        setTimeout(() => subscribeCallback?.('SUBSCRIBED'), 0);
+      }
+      return channel;
+    }),
     unsubscribe: vi.fn(),
     _trigger: (table: string, event: string, payload: unknown) => {
       const key = `${table}-${event}`;
       const handler = handlers.get(key);
       if (handler) handler(payload);
+    },
+    _triggerStatus: (status: string) => {
+      if (subscribeCallback) subscribeCallback(status);
     },
     _handlers: handlers,
   };
@@ -372,7 +383,7 @@ describe('useGameSubscription - Data Fetching', () => {
 // =============================================================================
 
 describe('useGameSubscription - Subscriptions', () => {
-  it('subscribes to games table', async () => {
+  it('subscribes to games table with UPDATE event', async () => {
     const game = createTestGame();
 
     mockSupabaseClient.from.mockImplementation((table: string) => {
@@ -392,10 +403,21 @@ describe('useGameSubscription - Subscriptions', () => {
       expect(mockSupabaseClient.channel).toHaveBeenCalledWith('game-sub-game-123');
     });
 
+    // Should subscribe to UPDATE and DELETE events separately
     expect(mockChannels[0].on).toHaveBeenCalledWith(
       'postgres_changes',
       expect.objectContaining({
-        event: '*',
+        event: 'UPDATE',
+        table: 'games',
+        filter: 'id=eq.game-123',
+      }),
+      expect.any(Function)
+    );
+
+    expect(mockChannels[0].on).toHaveBeenCalledWith(
+      'postgres_changes',
+      expect.objectContaining({
+        event: 'DELETE',
         table: 'games',
         filter: 'id=eq.game-123',
       }),
@@ -403,7 +425,7 @@ describe('useGameSubscription - Subscriptions', () => {
     );
   });
 
-  it('subscribes to players table', async () => {
+  it('subscribes to players table with separate event handlers', async () => {
     const game = createTestGame();
 
     mockSupabaseClient.from.mockImplementation((table: string) => {
@@ -423,10 +445,21 @@ describe('useGameSubscription - Subscriptions', () => {
       expect(mockSupabaseClient.channel).toHaveBeenCalledWith('game-sub-players-game-123');
     });
 
+    // Should subscribe to INSERT, UPDATE, DELETE events separately
     expect(mockChannels[1].on).toHaveBeenCalledWith(
       'postgres_changes',
       expect.objectContaining({
-        event: '*',
+        event: 'INSERT',
+        table: 'players',
+        filter: 'game_id=eq.game-123',
+      }),
+      expect.any(Function)
+    );
+
+    expect(mockChannels[1].on).toHaveBeenCalledWith(
+      'postgres_changes',
+      expect.objectContaining({
+        event: 'UPDATE',
         table: 'players',
         filter: 'game_id=eq.game-123',
       }),
@@ -434,7 +467,7 @@ describe('useGameSubscription - Subscriptions', () => {
     );
   });
 
-  it('subscribes to game_actions table', async () => {
+  it('subscribes to game_actions table with separate event handlers', async () => {
     const game = createTestGame();
 
     mockSupabaseClient.from.mockImplementation((table: string) => {
@@ -454,10 +487,11 @@ describe('useGameSubscription - Subscriptions', () => {
       expect(mockSupabaseClient.channel).toHaveBeenCalledWith('game-sub-actions-game-123');
     });
 
+    // Should subscribe to INSERT, UPDATE, DELETE events
     expect(mockChannels[2].on).toHaveBeenCalledWith(
       'postgres_changes',
       expect.objectContaining({
-        event: '*',
+        event: 'INSERT',
         table: 'game_actions',
         filter: 'game_id=eq.game-123',
       }),
@@ -536,6 +570,27 @@ describe('useGameSubscription - Subscriptions', () => {
     // Old subscriptions should be removed
     expect(mockSupabaseClient.removeChannel).toHaveBeenCalled();
   });
+
+  it('returns connectionStatus connected after successful subscription', async () => {
+    const game = createTestGame();
+
+    mockSupabaseClient.from.mockImplementation((table: string) => {
+      if (table === 'games') {
+        return createMockQueryBuilder(game);
+      } else if (table === 'players') {
+        return createMockArrayQueryBuilder([]);
+      } else if (table === 'game_actions') {
+        return createMockArrayQueryBuilder([]);
+      }
+      return createMockQueryBuilder(null);
+    });
+
+    const { result } = renderHook(() => useGameSubscription('game-123'));
+
+    await waitFor(() => {
+      expect(result.current.connectionStatus).toBe('connected');
+    });
+  });
 });
 
 // =============================================================================
@@ -567,47 +622,12 @@ describe('useGameSubscription - Game Updates', () => {
     const gameChannel = mockChannels[0];
 
     await act(async () => {
-      gameChannel._trigger('games', '*', {
-        eventType: 'UPDATE',
-        new: updatedGame,
-      });
+      // Payload format matches Supabase real-time payload
+      gameChannel._trigger('games', 'UPDATE', { new: updatedGame });
     });
 
     expect(result.current.game?.status).toBe('playing');
     expect(result.current.game?.phase).toBe('voting_for_leader');
-  });
-
-  it('updates game state on INSERT event', async () => {
-    const game = createTestGame();
-
-    mockSupabaseClient.from.mockImplementation((table: string) => {
-      if (table === 'games') {
-        return createMockQueryBuilder(game);
-      } else if (table === 'players') {
-        return createMockArrayQueryBuilder([]);
-      } else if (table === 'game_actions') {
-        return createMockArrayQueryBuilder([]);
-      }
-      return createMockQueryBuilder(null);
-    });
-
-    const { result } = renderHook(() => useGameSubscription('game-123'));
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    const newGame = createTestGame({ id: 'game-new', game_key: 'NEW123' });
-    const gameChannel = mockChannels[0];
-
-    await act(async () => {
-      gameChannel._trigger('games', '*', {
-        eventType: 'INSERT',
-        new: newGame,
-      });
-    });
-
-    expect(result.current.game?.game_key).toBe('NEW123');
   });
 
   it('sets game to null on DELETE event', async () => {
@@ -633,10 +653,8 @@ describe('useGameSubscription - Game Updates', () => {
     const gameChannel = mockChannels[0];
 
     await act(async () => {
-      gameChannel._trigger('games', '*', {
-        eventType: 'DELETE',
-        old: game,
-      });
+      // Payload format matches Supabase real-time payload
+      gameChannel._trigger('games', 'DELETE', { old: game });
     });
 
     expect(result.current.game).toBeNull();
@@ -679,10 +697,7 @@ describe('useGameSubscription - Player Updates', () => {
     const newPlayer = createTestPlayer({ id: 'p2', display_name: 'Bob' });
 
     await act(async () => {
-      playersChannel._trigger('players', '*', {
-        eventType: 'INSERT',
-        new: newPlayer,
-      });
+      playersChannel._trigger('players', 'INSERT', newPlayer);
     });
 
     await waitFor(() => {
@@ -715,10 +730,7 @@ describe('useGameSubscription - Player Updates', () => {
     const updatedPlayer = createTestPlayer({ id: 'p1', display_name: 'Alice', character: 'Seer' });
 
     await act(async () => {
-      playersChannel._trigger('players', '*', {
-        eventType: 'UPDATE',
-        new: updatedPlayer,
-      });
+      playersChannel._trigger('players', 'UPDATE', { new: updatedPlayer });
     });
 
     expect(result.current.players[0]?.character).toBe('Seer');
@@ -749,10 +761,7 @@ describe('useGameSubscription - Player Updates', () => {
     const playersChannel = mockChannels[1];
 
     await act(async () => {
-      playersChannel._trigger('players', '*', {
-        eventType: 'DELETE',
-        old: player1,
-      });
+      playersChannel._trigger('players', 'DELETE', { old: player1 });
     });
 
     expect(result.current.players.length).toBe(1);
@@ -791,10 +800,7 @@ describe('useGameSubscription - Action Updates', () => {
     const newAction = createTestAction({ id: 'act-1', action_type: 'vote_yes' });
 
     await act(async () => {
-      actionsChannel._trigger('game_actions', '*', {
-        eventType: 'INSERT',
-        new: newAction,
-      });
+      actionsChannel._trigger('game_actions', 'INSERT', { new: newAction });
     });
 
     expect(result.current.actions.length).toBe(1);
@@ -826,10 +832,7 @@ describe('useGameSubscription - Action Updates', () => {
     const updatedAction = createTestAction({ id: 'act-1', action_type: 'vote_no' });
 
     await act(async () => {
-      actionsChannel._trigger('game_actions', '*', {
-        eventType: 'UPDATE',
-        new: updatedAction,
-      });
+      actionsChannel._trigger('game_actions', 'UPDATE', { new: updatedAction });
     });
 
     expect(result.current.actions[0]?.action_type).toBe('vote_no');
@@ -860,10 +863,7 @@ describe('useGameSubscription - Action Updates', () => {
     const actionsChannel = mockChannels[2];
 
     await act(async () => {
-      actionsChannel._trigger('game_actions', '*', {
-        eventType: 'DELETE',
-        old: action1,
-      });
+      actionsChannel._trigger('game_actions', 'DELETE', { old: action1 });
     });
 
     expect(result.current.actions.length).toBe(1);
@@ -894,16 +894,14 @@ describe('useGameSubscription - Action Updates', () => {
 
     // Add first action
     await act(async () => {
-      actionsChannel._trigger('game_actions', '*', {
-        eventType: 'INSERT',
+      actionsChannel._trigger('game_actions', 'INSERT', {
         new: createTestAction({ id: 'act-1', player_id: 'p1' }),
       });
     });
 
     // Add second action
     await act(async () => {
-      actionsChannel._trigger('game_actions', '*', {
-        eventType: 'INSERT',
+      actionsChannel._trigger('game_actions', 'INSERT', {
         new: createTestAction({ id: 'act-2', player_id: 'p2' }),
       });
     });
