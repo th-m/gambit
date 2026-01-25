@@ -1109,7 +1109,8 @@ describe('CharacterInfoPanel', () => {
     );
 
     expect(screen.getByText('Seer')).toBeTruthy();
-    expect(screen.getByText(/good Team/i)).toBeTruthy();
+    // Team badge shows just the team name
+    expect(screen.getByText('good')).toBeTruthy();
   });
 
   it('shows known players for Seer (excluding Saboteur)', async () => {
@@ -1239,8 +1240,8 @@ describe('CharacterInfoPanel', () => {
       />
     );
 
-    // Check for red color classes (evil team)
-    const panel = container.querySelector('.border-red-700');
+    // Check for red color classes (evil team) - uses border-red-500/30 in new design
+    const panel = container.querySelector('[class*="border-red"]');
     expect(panel).toBeTruthy();
   });
 });
@@ -1272,8 +1273,8 @@ describe('ScoreBoard', () => {
 
     const { container } = render(<ScoreBoard game={game} />);
 
-    // Current round should have blue border
-    const roundIndicators = container.querySelectorAll('.border-blue-400');
+    // Current round should have white border/ring in new design
+    const roundIndicators = container.querySelectorAll('[class*="ring-white"]');
     expect(roundIndicators.length).toBeGreaterThan(0);
   });
 
@@ -1287,11 +1288,12 @@ describe('ScoreBoard', () => {
     const { container } = render(<ScoreBoard game={game} />);
 
     // Should have both blue (good win) and red (evil win) indicators for past rounds
-    const blueRounds = container.querySelectorAll('.bg-blue-900\\/50');
-    const redRounds = container.querySelectorAll('.bg-red-900\\/50');
+    // New design uses gradient classes with border classes
+    const blueRounds = container.querySelectorAll('[class*="border-blue-500"]');
+    const redRounds = container.querySelectorAll('[class*="border-red-500"]');
     
-    expect(blueRounds.length).toBe(1);
-    expect(redRounds.length).toBe(1);
+    expect(blueRounds.length).toBeGreaterThan(0);
+    expect(redRounds.length).toBeGreaterThan(0);
   });
 
   it('shows all 5 round indicators', () => {

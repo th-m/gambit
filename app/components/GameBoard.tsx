@@ -9,9 +9,17 @@
  * - Renders ActionPanel when actions available
  * - Initializes vibration listener for beepered players
  * - Shows loading state during transitions
+ *
+ * Visual Design:
+ * - Clear phase indicator with contextual colors and icons
+ * - Score board with round progress visualization
+ * - Player area showing all participants with status indicators
+ * - Action panel positioned for easy access
+ * - Character info panel in consistent sidebar location
+ * - Responsive layout: mobile (stacked), tablet (2-col), desktop (3-col)
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { useGameFlow } from '~/contexts/GameFlowContext';
 import { ActionPanel } from '~/components/ActionPanel';
@@ -27,6 +35,70 @@ import type {
 } from '~/types/game';
 
 // =============================================================================
+// Phase Configuration
+// =============================================================================
+
+interface PhaseConfig {
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+}
+
+const PHASE_CONFIGS: Record<GamePhase, PhaseConfig> = {
+  lobby: {
+    name: 'Lobby',
+    description: 'Waiting for players',
+    icon: '👥',
+    color: 'text-gray-300',
+    bgColor: 'bg-stone-700',
+    borderColor: 'border-stone-600',
+  },
+  voting_for_leader: {
+    name: 'Leader Vote',
+    description: 'Vote to approve or reject the current leader',
+    icon: '👑',
+    color: 'text-amber-400',
+    bgColor: 'bg-amber-900/30',
+    borderColor: 'border-amber-700/50',
+  },
+  selecting_team: {
+    name: 'Team Selection',
+    description: 'Leader is selecting the mission team',
+    icon: '🎯',
+    color: 'text-cyan-400',
+    bgColor: 'bg-cyan-900/30',
+    borderColor: 'border-cyan-700/50',
+  },
+  mission_voting: {
+    name: 'Mission Vote',
+    description: 'Team members are voting on the mission',
+    icon: '⚔️',
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-900/30',
+    borderColor: 'border-purple-700/50',
+  },
+  resolution: {
+    name: 'Resolution',
+    description: 'Processing mission results',
+    icon: '📜',
+    color: 'text-emerald-400',
+    bgColor: 'bg-emerald-900/30',
+    borderColor: 'border-emerald-700/50',
+  },
+  assassination: {
+    name: 'Assassination',
+    description: 'The Assassin is choosing a target',
+    icon: '🗡️',
+    color: 'text-red-400',
+    bgColor: 'bg-red-900/30',
+    borderColor: 'border-red-700/50',
+  },
+};
+
+// =============================================================================
 // Score Board Component
 // =============================================================================
 
@@ -38,76 +110,110 @@ export function ScoreBoard({ game }: ScoreBoardProps) {
   const rounds = [1, 2, 3, 4, 5];
 
   return (
-    <div className="bg-stone-800 rounded-xl p-4 border border-stone-700 mb-6">
-      <div className="flex items-center justify-between">
-        {/* Good victories */}
-        <div className="text-center">
-          <p className="text-xs text-gray-400 uppercase tracking-wide">Good</p>
-          <p className="text-3xl font-bold text-blue-400">{game.good_victories}</p>
+    <div className="bg-gradient-to-br from-stone-800 to-stone-800/80 rounded-2xl p-4 sm:p-5 border border-stone-700/50 shadow-lg mb-4 sm:mb-6">
+      {/* Main Score Display */}
+      <div className="flex items-center justify-between gap-2 sm:gap-4">
+        {/* Good Team Score */}
+        <div className="flex-1 text-center">
+          <div className="inline-flex flex-col items-center">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 flex items-center justify-center mb-1 sm:mb-2 shadow-lg shadow-blue-500/10">
+              <span className="text-2xl sm:text-4xl font-bold text-blue-400 tabular-nums">
+                {game.good_victories ?? 0}
+              </span>
+            </div>
+            <span className="text-[10px] sm:text-xs text-blue-400/80 uppercase tracking-wider font-medium">
+              Good
+            </span>
+          </div>
         </div>
 
-        {/* Round indicators */}
-        <div className="flex gap-2">
+        {/* Round Indicators */}
+        <div className="flex gap-1 sm:gap-2 items-center">
           {rounds.map((round) => {
             const isPast = round < (game.current_round ?? 1);
             const isCurrent = round === game.current_round;
-            // Show first good_victories completed rounds as good wins
             const isGoodWin = isPast && round <= (game.good_victories ?? 0);
-            // Remaining past rounds are evil wins (since past = good + evil victories)
             const isEvilWin = isPast && !isGoodWin;
+            const isFuture = round > (game.current_round ?? 1);
 
-            let bgColor = 'bg-stone-700';
-            let borderColor = 'border-stone-600';
-            let textColor = 'text-gray-400';
+            // Visual states
+            let containerClasses = 'w-7 h-7 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center font-semibold transition-all duration-300';
+            let numberClasses = 'text-xs sm:text-sm';
 
             if (isCurrent) {
-              bgColor = 'bg-stone-600';
-              borderColor = 'border-blue-400';
-              textColor = 'text-white';
-            } else if (isPast) {
-              // Show mission results for completed rounds
-              if (isGoodWin) {
-                bgColor = 'bg-blue-900/50';
-                borderColor = 'border-blue-700';
-                textColor = 'text-blue-400';
-              } else if (isEvilWin) {
-                bgColor = 'bg-red-900/50';
-                borderColor = 'border-red-700';
-                textColor = 'text-red-400';
-              }
+              containerClasses += ' bg-gradient-to-br from-white/10 to-white/5 border-2 border-white/40 shadow-lg shadow-white/5 ring-2 ring-white/20 ring-offset-2 ring-offset-stone-800';
+              numberClasses += ' text-white';
+            } else if (isGoodWin) {
+              containerClasses += ' bg-gradient-to-br from-blue-500/30 to-blue-600/20 border border-blue-500/50';
+              numberClasses += ' text-blue-300';
+            } else if (isEvilWin) {
+              containerClasses += ' bg-gradient-to-br from-red-500/30 to-red-600/20 border border-red-500/50';
+              numberClasses += ' text-red-300';
+            } else if (isFuture) {
+              containerClasses += ' bg-stone-700/50 border border-stone-600/50';
+              numberClasses += ' text-stone-500';
             }
 
             return (
               <div
                 key={round}
-                className={`w-10 h-10 rounded-lg ${bgColor} border-2 ${borderColor} flex items-center justify-center ${textColor} font-semibold transition-colors`}
+                className={containerClasses}
+                aria-label={`Round ${round}${isCurrent ? ' (current)' : ''}${isGoodWin ? ' - Good won' : ''}${isEvilWin ? ' - Evil won' : ''}`}
               >
-                {round}
+                <span className={numberClasses}>{round}</span>
               </div>
             );
           })}
         </div>
 
-        {/* Evil victories */}
-        <div className="text-center">
-          <p className="text-xs text-gray-400 uppercase tracking-wide">Evil</p>
-          <p className="text-3xl font-bold text-red-400">{game.evil_victories}</p>
+        {/* Evil Team Score */}
+        <div className="flex-1 text-center">
+          <div className="inline-flex flex-col items-center">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30 flex items-center justify-center mb-1 sm:mb-2 shadow-lg shadow-red-500/10">
+              <span className="text-2xl sm:text-4xl font-bold text-red-400 tabular-nums">
+                {game.evil_victories ?? 0}
+              </span>
+            </div>
+            <span className="text-[10px] sm:text-xs text-red-400/80 uppercase tracking-wider font-medium">
+              Evil
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="mt-3 flex gap-1">
-        <div className="flex-1 h-1 rounded-full bg-stone-700 overflow-hidden">
-          <div
-            className="h-full bg-blue-500 transition-all duration-500"
-            style={{ width: `${((game.good_victories ?? 0) / 3) * 100}%` }}
-          />
+      {/* Victory Progress Bars */}
+      <div className="mt-3 sm:mt-4 flex gap-2 items-center">
+        {/* Good progress */}
+        <div className="flex-1 flex items-center gap-1 sm:gap-2">
+          <div className="flex-1 h-1.5 sm:h-2 rounded-full bg-stone-700/80 overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-700 ease-out rounded-full"
+              style={{ width: `${((game.good_victories ?? 0) / 3) * 100}%` }}
+            />
+          </div>
+          {(game.good_victories ?? 0) > 0 && (
+            <span className="text-[10px] text-blue-400/60 tabular-nums hidden sm:inline">
+              {game.good_victories}/3
+            </span>
+          )}
         </div>
-        <div className="flex-1 h-1 rounded-full bg-stone-700 overflow-hidden">
-          <div
-            className="h-full bg-red-500 transition-all duration-500 ml-auto"
-            style={{ width: `${((game.evil_victories ?? 0) / 3) * 100}%` }}
-          />
+
+        {/* Divider */}
+        <div className="w-px h-3 bg-stone-600/50" />
+
+        {/* Evil progress */}
+        <div className="flex-1 flex items-center gap-1 sm:gap-2 flex-row-reverse">
+          <div className="flex-1 h-1.5 sm:h-2 rounded-full bg-stone-700/80 overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-l from-red-500 to-red-400 transition-all duration-700 ease-out ml-auto rounded-full"
+              style={{ width: `${((game.evil_victories ?? 0) / 3) * 100}%` }}
+            />
+          </div>
+          {(game.evil_victories ?? 0) > 0 && (
+            <span className="text-[10px] text-red-400/60 tabular-nums hidden sm:inline">
+              {game.evil_victories}/3
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -133,9 +239,13 @@ export function CharacterInfoPanel({
   modifiers = [],
   statuses = [],
 }: CharacterInfoPanelProps) {
-  const teamColor = player.team === 'good' ? 'text-blue-400' : 'text-red-400';
-  const teamBgColor = player.team === 'good' ? 'bg-blue-900/20' : 'bg-red-900/20';
-  const teamBorderColor = player.team === 'good' ? 'border-blue-700' : 'border-red-700';
+  const isGood = player.team === 'good';
+  const teamGradient = isGood
+    ? 'from-blue-500/10 via-blue-600/5 to-transparent'
+    : 'from-red-500/10 via-red-600/5 to-transparent';
+  const teamBorderColor = isGood ? 'border-blue-500/30' : 'border-red-500/30';
+  const teamAccent = isGood ? 'text-blue-400' : 'text-red-400';
+  const teamBadgeBg = isGood ? 'bg-blue-500/20' : 'bg-red-500/20';
 
   // Build game context for resolving character info with effects applied
   const ctx: GameContext = {
@@ -164,56 +274,71 @@ export function CharacterInfoPanel({
     );
 
   return (
-    <div className={`rounded-xl p-4 border ${teamBgColor} ${teamBorderColor}`}>
-      {/* Character name and team */}
-      <h3 className="font-semibold mb-2 text-gray-300">Your Role</h3>
-      <p className={`text-xl font-bold ${teamColor}`}>{player.character}</p>
-      <p className="text-sm text-gray-400 capitalize mb-3">{player.team} Team</p>
+    <div className={`rounded-2xl border ${teamBorderColor} bg-gradient-to-br ${teamGradient} bg-stone-800/50 overflow-hidden shadow-lg`}>
+      {/* Header with character name */}
+      <div className="p-4 pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Your Role</p>
+            <h3 className={`text-lg sm:text-xl font-bold ${teamAccent} truncate`}>
+              {player.character ?? 'Unknown'}
+            </h3>
+          </div>
+          <span className={`shrink-0 px-2 py-1 rounded-lg text-[10px] uppercase tracking-wider font-medium ${teamBadgeBg} ${teamAccent}`}>
+            {player.team ?? 'Unknown'}
+          </span>
+        </div>
 
-      {/* Character description from registry */}
-      <p className="text-sm text-gray-400">
-        {characterDef?.description ?? 'Unknown character'}
-      </p>
+        {/* Character description */}
+        <p className="text-xs sm:text-sm text-gray-400 mt-2 leading-relaxed">
+          {characterDef?.description ?? 'Unknown character abilities'}
+        </p>
+      </div>
 
-      {/* Resolved information with effects applied */}
+      {/* Known Information Section */}
       {resolvedInfo.knownPlayers && resolvedInfo.knownPlayers.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-stone-700">
-          {/* Unreliable info warning for uncertain knowledge (e.g., Oracle with Phantom) */}
+        <div className="border-t border-stone-700/50 bg-stone-800/30 p-4">
+          {/* Unreliable info warning */}
           {isUnreliable && (
-            <div className="flex items-center gap-1 mb-2">
-              <span className="text-yellow-500 text-xs">⚠</span>
-              <span className="text-xs text-yellow-500/80">
+            <div className="flex items-center gap-2 mb-3 px-2 py-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+              <span className="text-yellow-400 text-sm">⚠️</span>
+              <span className="text-xs text-yellow-400/90">
                 Information may be unreliable
               </span>
             </div>
           )}
 
-          {/* Description of what they know */}
-          <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">
-            {resolvedInfo.description}
+          {/* Section header */}
+          <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">
+            {resolvedInfo.description || 'Known Information'}
           </p>
 
-          {/* Known players with labels */}
-          <div className="flex flex-wrap gap-2">
+          {/* Known players grid */}
+          <div className="flex flex-wrap gap-1.5">
             {resolvedInfo.knownPlayers.map((playerId) => {
               const knownPlayer = players.find((p) => p.id === playerId);
               const label = resolvedInfo.knownPlayerLabels?.[playerId];
               const isEvil = label?.toLowerCase().includes('evil');
               const isSeer = label?.toLowerCase().includes('seer');
-              const labelColor = isEvil
-                ? 'text-red-400 bg-red-900/30 border-red-700'
-                : isSeer
-                  ? 'text-purple-400 bg-purple-900/30 border-purple-700'
-                  : 'text-gray-400 bg-stone-700/30 border-stone-600';
+
+              let pillClasses = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors';
+              if (isEvil) {
+                pillClasses += ' bg-red-500/20 text-red-300 border border-red-500/30';
+              } else if (isSeer) {
+                pillClasses += ' bg-purple-500/20 text-purple-300 border border-purple-500/30';
+              } else {
+                pillClasses += ' bg-stone-700/50 text-gray-300 border border-stone-600/50';
+              }
 
               return (
-                <div
-                  key={playerId}
-                  className={`flex items-center gap-1 px-2 py-1 rounded border text-sm ${labelColor}`}
-                >
-                  <span>{knownPlayer?.display_name ?? 'Unknown'}</span>
+                <div key={playerId} className={pillClasses}>
+                  <span className="truncate max-w-[100px]">
+                    {knownPlayer?.display_name ?? 'Unknown'}
+                  </span>
                   {label && (
-                    <span className="text-xs opacity-75">({label})</span>
+                    <span className="opacity-60 text-[10px]">
+                      {label}
+                    </span>
                   )}
                 </div>
               );
@@ -233,25 +358,54 @@ export function CharacterInfoPanel({
 
 interface PhaseIndicatorProps {
   phase: GamePhase | null;
+  rejectionCount?: number;
 }
 
-function PhaseIndicator({ phase }: PhaseIndicatorProps) {
-  const phaseNames: Record<GamePhase, string> = {
-    lobby: 'Lobby',
-    voting_for_leader: 'Leader Vote',
-    selecting_team: 'Team Selection',
-    mission_voting: 'Mission Vote',
-    resolution: 'Resolution',
-    assassination: 'Assassination',
-  };
+function PhaseIndicator({ phase, rejectionCount = 0 }: PhaseIndicatorProps) {
+  const config = phase ? PHASE_CONFIGS[phase] : null;
 
-  const phaseName = phase ? phaseNames[phase] : 'Unknown';
+  if (!config) {
+    return (
+      <div className="text-center mb-4 sm:mb-6">
+        <span className="inline-block px-4 py-2 bg-stone-700 rounded-xl text-sm text-gray-400">
+          Unknown Phase
+        </span>
+      </div>
+    );
+  }
 
   return (
-    <div className="text-center mb-4">
-      <span className="inline-block px-4 py-1 bg-stone-700 rounded-full text-sm text-gray-300">
-        {phaseName}
-      </span>
+    <div className="mb-4 sm:mb-6">
+      <div className={`rounded-xl ${config.bgColor} border ${config.borderColor} p-3 sm:p-4 transition-all duration-300`}>
+        <div className="flex items-center justify-between gap-3">
+          {/* Phase info */}
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-xl sm:text-2xl shrink-0" role="img" aria-hidden="true">
+              {config.icon}
+            </span>
+            <div className="min-w-0">
+              <h2 className={`text-base sm:text-lg font-bold ${config.color} truncate`}>
+                {config.name}
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-400 truncate">
+                {config.description}
+              </p>
+            </div>
+          </div>
+
+          {/* Rejection counter (only during leader voting) */}
+          {phase === 'voting_for_leader' && rejectionCount > 0 && (
+            <div className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg bg-orange-500/20 border border-orange-500/30">
+              <span className="text-orange-400 text-xs sm:text-sm font-medium tabular-nums">
+                {rejectionCount}/3
+              </span>
+              <span className="text-orange-400/60 text-[10px] sm:text-xs">
+                rejects
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -259,25 +413,57 @@ function PhaseIndicator({ phase }: PhaseIndicatorProps) {
 // PlayerList is now imported from ~/components/PlayerList
 
 // =============================================================================
-// Loading Spinner Component
+// Loading Skeleton Component
 // =============================================================================
 
-function LoadingSpinner() {
+function GameBoardSkeleton() {
   return (
-    <div className="flex items-center justify-center py-12">
-      <svg
-        className="animate-spin h-8 w-8 text-blue-400"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-      >
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-        <path
-          className="opacity-75"
-          fill="currentColor"
-          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-        />
-      </svg>
+    <div className="min-h-screen bg-stone-900 text-white p-4 sm:p-6 animate-pulse">
+      <div className="max-w-6xl mx-auto">
+        {/* ScoreBoard skeleton */}
+        <div className="bg-stone-800/50 rounded-2xl p-5 mb-6 h-32" />
+
+        {/* Phase indicator skeleton */}
+        <div className="bg-stone-800/50 rounded-xl p-4 mb-6 h-20" />
+
+        {/* Main grid skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          {/* Main content area */}
+          <div className="md:col-span-2 lg:col-span-2">
+            <div className="bg-stone-800/50 rounded-2xl h-80" />
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-4">
+            <div className="bg-stone-800/50 rounded-2xl h-40" />
+            <div className="bg-stone-800/50 rounded-2xl h-32" />
+            <div className="bg-stone-800/50 rounded-2xl h-48" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// Sidebar Section Component (for consistent spacing and headers)
+// =============================================================================
+
+interface SidebarSectionProps {
+  title?: string;
+  children: React.ReactNode;
+  className?: string;
+}
+
+function SidebarSection({ title, children, className = '' }: SidebarSectionProps) {
+  return (
+    <div className={className}>
+      {title && (
+        <h3 className="text-[10px] uppercase tracking-wider text-gray-500 mb-2 px-1">
+          {title}
+        </h3>
+      )}
+      {children}
     </div>
   );
 }
@@ -296,6 +482,7 @@ export interface GameBoardProps {
 
 export function GameBoard({ renderPhase }: GameBoardProps) {
   const { game, players, actions, ctx, currentPlayer, isLoading, error, executeAction } = useGameFlow();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Initialize vibration listener for beepered players
   // Note: useVibration hook will be implemented in hook-vibration story
@@ -316,31 +503,28 @@ export function GameBoard({ renderPhase }: GameBoardProps) {
 
   // Loading state
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-stone-900 text-white p-6">
-        <div className="max-w-4xl mx-auto">
-          <LoadingSpinner />
-        </div>
-      </div>
-    );
+    return <GameBoardSkeleton />;
   }
 
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-stone-900 text-white p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center py-12">
-            <p className="text-red-400" role="alert">
-              {error}
-            </p>
-            <Link
-              to="/"
-              className="mt-4 inline-block text-gray-400 hover:text-white transition-colors"
-            >
-              Return Home
-            </Link>
+      <div className="min-h-screen bg-stone-900 text-white p-4 sm:p-6 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
+            <span className="text-2xl">⚠️</span>
           </div>
+          <h2 className="text-xl font-bold text-red-400 mb-2">Something went wrong</h2>
+          <p className="text-gray-400 mb-6" role="alert">
+            {error}
+          </p>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-stone-800 hover:bg-stone-700 rounded-xl text-gray-300 transition-colors"
+          >
+            <span>←</span>
+            Return Home
+          </Link>
         </div>
       </div>
     );
@@ -349,17 +533,22 @@ export function GameBoard({ renderPhase }: GameBoardProps) {
   // Game not found
   if (!game) {
     return (
-      <div className="min-h-screen bg-stone-900 text-white p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center py-12">
-            <p className="text-gray-400">Game not found</p>
-            <Link
-              to="/"
-              className="mt-4 inline-block text-gray-400 hover:text-white transition-colors"
-            >
-              Return Home
-            </Link>
+      <div className="min-h-screen bg-stone-900 text-white p-4 sm:p-6 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-stone-800 flex items-center justify-center">
+            <span className="text-2xl">🎮</span>
           </div>
+          <h2 className="text-xl font-bold text-gray-300 mb-2">Game not found</h2>
+          <p className="text-gray-500 mb-6">
+            This game may have ended or the link is incorrect.
+          </p>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-stone-800 hover:bg-stone-700 rounded-xl text-gray-300 transition-colors"
+          >
+            <span>←</span>
+            Return Home
+          </Link>
         </div>
       </div>
     );
@@ -368,17 +557,22 @@ export function GameBoard({ renderPhase }: GameBoardProps) {
   // Current player not found
   if (!currentPlayer) {
     return (
-      <div className="min-h-screen bg-stone-900 text-white p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center py-12">
-            <p className="text-gray-400">Player not found in game</p>
-            <Link
-              to="/"
-              className="mt-4 inline-block text-gray-400 hover:text-white transition-colors"
-            >
-              Return Home
-            </Link>
+      <div className="min-h-screen bg-stone-900 text-white p-4 sm:p-6 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-stone-800 flex items-center justify-center">
+            <span className="text-2xl">👤</span>
           </div>
+          <h2 className="text-xl font-bold text-gray-300 mb-2">Not in this game</h2>
+          <p className="text-gray-500 mb-6">
+            You're not a participant in this game.
+          </p>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-stone-800 hover:bg-stone-700 rounded-xl text-gray-300 transition-colors"
+          >
+            <span>←</span>
+            Return Home
+          </Link>
         </div>
       </div>
     );
@@ -386,67 +580,128 @@ export function GameBoard({ renderPhase }: GameBoardProps) {
 
   // Calculate leader
   const alivePlayers = players.filter((p) => p.is_alive).sort((a, b) => (a.seat_order ?? 0) - (b.seat_order ?? 0));
-  const leaderId = alivePlayers[game.crown_index % alivePlayers.length]?.id;
+  const leaderId = alivePlayers[(game.crown_index ?? 0) % alivePlayers.length]?.id;
+  const leaderName = alivePlayers.find(p => p.id === leaderId)?.display_name;
 
   return (
-    <div className="min-h-screen bg-stone-900 text-white p-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-b from-stone-900 via-stone-900 to-stone-950 text-white">
+      {/* Top header with game info */}
+      <header className="sticky top-0 z-10 bg-stone-900/95 backdrop-blur-sm border-b border-stone-800">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link
+              to="/"
+              className="p-2 -ml-2 rounded-lg text-gray-400 hover:text-white hover:bg-stone-800 transition-colors"
+              aria-label="Back to home"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </Link>
+            <div>
+              <p className="text-xs text-gray-500">Game</p>
+              <p className="text-sm font-medium text-gray-300">{game.game_key}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500">Playing as</span>
+            <span className="text-sm font-medium text-gray-300">{currentPlayer.display_name}</span>
+          </div>
+        </div>
+      </header>
+
+      {/* Main content */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
         {/* Score Board */}
         <ScoreBoard game={game} />
 
-        {/* Phase Indicator */}
-        <PhaseIndicator phase={game.phase as GamePhase} />
+        {/* Phase Indicator with rejection count */}
+        <PhaseIndicator phase={game.phase as GamePhase} rejectionCount={game.rejection_count ?? 0} />
 
-        {/* Main Game Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Phase Content */}
-          <div className="lg:col-span-2">
-            <div className="bg-stone-800 rounded-2xl p-6 border border-stone-700 min-h-[300px] flex items-center justify-center">
-              {renderPhase ? (
-                renderPhase(game.phase as GamePhase | null)
-              ) : (
-                <div className="text-center text-gray-400">
-                  <p>Phase: {game.phase}</p>
-                </div>
-              )}
+        {/* Main Game Area - Responsive Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          {/* Main Phase Content - Takes full width on mobile, 2 cols on desktop */}
+          <div className="lg:col-span-2 order-1">
+            <div className="bg-gradient-to-br from-stone-800 to-stone-800/80 rounded-2xl border border-stone-700/50 shadow-xl overflow-hidden">
+              {/* Phase content header for mobile context */}
+              <div className="lg:hidden border-b border-stone-700/50 p-3 flex items-center justify-between">
+                <span className="text-xs text-gray-500 uppercase tracking-wider">Current Phase</span>
+                {leaderName && (
+                  <span className="text-xs text-amber-400">
+                    👑 {leaderName}
+                  </span>
+                )}
+              </div>
+              <div className="p-4 sm:p-6 min-h-[280px] sm:min-h-[320px] flex items-center justify-center">
+                {renderPhase ? (
+                  renderPhase(game.phase as GamePhase | null)
+                ) : (
+                  <div className="text-center text-gray-400">
+                    <p className="text-lg">Phase: {game.phase}</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-4">
-            <CharacterInfoPanel
-              player={currentPlayer}
-              players={players}
-              game={game}
-              modifiers={ctx?.modifiers}
-              statuses={ctx?.statuses}
-            />
-            {ctx && (
-              <ActionPanel
-                player={currentPlayer}
-                game={game}
-                players={players}
-                actions={actions}
-                ctx={ctx}
-                onExecuteAction={executeAction}
-              />
-            )}
-            <PlayerList
-              players={players}
-              currentPlayerId={currentPlayer.id}
-              leaderId={leaderId}
-              selectedTeam={game.selected_team}
-            />
+          {/* Sidebar - Moves below main content on mobile */}
+          <div className="order-2 lg:order-2 space-y-4">
+            {/* Mobile sidebar toggle */}
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="lg:hidden w-full flex items-center justify-between px-4 py-3 bg-stone-800/50 rounded-xl border border-stone-700/50 text-sm text-gray-400"
+            >
+              <span>{sidebarCollapsed ? 'Show' : 'Hide'} game info</span>
+              <svg
+                className={`w-5 h-5 transition-transform ${sidebarCollapsed ? '' : 'rotate-180'}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* Sidebar content - collapsible on mobile */}
+            <div className={`space-y-4 ${sidebarCollapsed ? 'hidden lg:block' : ''}`}>
+              {/* Character Info */}
+              <SidebarSection>
+                <CharacterInfoPanel
+                  player={currentPlayer}
+                  players={players}
+                  game={game}
+                  modifiers={ctx?.modifiers}
+                  statuses={ctx?.statuses}
+                />
+              </SidebarSection>
+
+              {/* Action Panel - only show when actions available */}
+              {ctx && (
+                <SidebarSection>
+                  <ActionPanel
+                    player={currentPlayer}
+                    game={game}
+                    players={players}
+                    actions={actions}
+                    ctx={ctx}
+                    onExecuteAction={executeAction}
+                  />
+                </SidebarSection>
+              )}
+
+              {/* Player List */}
+              <SidebarSection title="Players">
+                <PlayerList
+                  players={players}
+                  currentPlayerId={currentPlayer.id}
+                  leaderId={leaderId}
+                  selectedTeam={game.selected_team}
+                />
+              </SidebarSection>
+            </div>
           </div>
         </div>
-
-        {/* Back link */}
-        <div className="mt-6 text-center">
-          <Link to="/" className="text-gray-400 hover:text-white transition-colors">
-            &larr; Back to Home
-          </Link>
-        </div>
-      </div>
+      </main>
     </div>
   );
 }
