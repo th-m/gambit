@@ -221,6 +221,145 @@ export function ScoreBoard({ game }: ScoreBoardProps) {
 }
 
 // =============================================================================
+// Character Icons
+// =============================================================================
+
+/**
+ * Character icon configurations with unique visual representations.
+ * Each character has a distinctive icon and color scheme.
+ */
+interface CharacterIconConfig {
+  icon: string;
+  bgGradient: string;
+  iconColor: string;
+}
+
+const CHARACTER_ICONS: Record<string, CharacterIconConfig> = {
+  // Good Team
+  Seer: {
+    icon: '👁️',
+    bgGradient: 'from-purple-600 to-indigo-700',
+    iconColor: 'text-purple-200',
+  },
+  Oracle: {
+    icon: '🔮',
+    bgGradient: 'from-violet-600 to-purple-700',
+    iconColor: 'text-violet-200',
+  },
+  Guardian: {
+    icon: '🛡️',
+    bgGradient: 'from-cyan-600 to-blue-700',
+    iconColor: 'text-cyan-200',
+  },
+  Tracker: {
+    icon: '📡',
+    bgGradient: 'from-teal-600 to-emerald-700',
+    iconColor: 'text-teal-200',
+  },
+  Villager: {
+    icon: '🏘️',
+    bgGradient: 'from-blue-600 to-sky-700',
+    iconColor: 'text-blue-200',
+  },
+  Soldier: {
+    icon: '⚔️',
+    bgGradient: 'from-slate-600 to-blue-700',
+    iconColor: 'text-slate-200',
+  },
+  // Evil Team
+  Assassin: {
+    icon: '🗡️',
+    bgGradient: 'from-red-600 to-rose-800',
+    iconColor: 'text-red-200',
+  },
+  Fixer: {
+    icon: '🎭',
+    bgGradient: 'from-orange-600 to-red-700',
+    iconColor: 'text-orange-200',
+  },
+  Phantom: {
+    icon: '👻',
+    bgGradient: 'from-fuchsia-600 to-pink-700',
+    iconColor: 'text-fuchsia-200',
+  },
+  Saboteur: {
+    icon: '💣',
+    bgGradient: 'from-amber-600 to-orange-700',
+    iconColor: 'text-amber-200',
+  },
+  Minion: {
+    icon: '🦇',
+    bgGradient: 'from-rose-600 to-red-700',
+    iconColor: 'text-rose-200',
+  },
+};
+
+/**
+ * Action display configurations with icons and descriptions.
+ */
+interface ActionDisplayConfig {
+  icon: string;
+  name: string;
+  shortDesc: string;
+  usageHint: string;
+}
+
+const ACTION_DISPLAYS: Record<string, ActionDisplayConfig> = {
+  assassinate: {
+    icon: '🎯',
+    name: 'Assassinate',
+    shortDesc: 'Eliminate a player',
+    usageHint: 'Mission or Final Phase',
+  },
+  protect: {
+    icon: '🛡️',
+    name: 'Protect',
+    shortDesc: 'Shield from assassination',
+    usageHint: 'Mission Voting',
+  },
+  plant_beeper: {
+    icon: '📡',
+    name: 'Plant Beeper',
+    shortDesc: 'Track vote alignment',
+    usageHint: 'Team Selection',
+  },
+  rig_vote: {
+    icon: '🎲',
+    name: 'Rig Vote',
+    shortDesc: 'Force mission pass',
+    usageHint: 'Mission Voting',
+  },
+  sabotage: {
+    icon: '💥',
+    name: 'Sabotage',
+    shortDesc: 'Add extra fail vote',
+    usageHint: 'On Mission',
+  },
+};
+
+/**
+ * Effect display configurations.
+ */
+interface EffectDisplayConfig {
+  icon: string;
+  name: string;
+  shortDesc: string;
+}
+
+const EFFECT_DISPLAYS: Record<string, EffectDisplayConfig> = {
+  appears_as_seer: {
+    icon: '🎭',
+    name: 'False Seer',
+    shortDesc: 'Appear as Seer to Oracle',
+  },
+  appears_as_good: {
+    icon: '🕶️',
+    name: 'Hidden Evil',
+    shortDesc: 'Hidden from Seer',
+  },
+};
+
+// =============================================================================
 // Character Info Panel Component
 // =============================================================================
 
@@ -246,6 +385,7 @@ export function CharacterInfoPanel({
   const teamBorderColor = isGood ? 'border-blue-500/30' : 'border-red-500/30';
   const teamAccent = isGood ? 'text-blue-400' : 'text-red-400';
   const teamBadgeBg = isGood ? 'bg-blue-500/20' : 'bg-red-500/20';
+  const teamGlow = isGood ? 'shadow-blue-500/20' : 'shadow-red-500/20';
 
   // Build game context for resolving character info with effects applied
   const ctx: GameContext = {
@@ -261,6 +401,15 @@ export function CharacterInfoPanel({
     ? characterRegistry.get(player.character)
     : undefined;
 
+  // Get character icon config
+  const iconConfig = player.character
+    ? CHARACTER_ICONS[player.character] || {
+        icon: '❓',
+        bgGradient: 'from-gray-600 to-gray-700',
+        iconColor: 'text-gray-200',
+      }
+    : { icon: '❓', bgGradient: 'from-gray-600 to-gray-700', iconColor: 'text-gray-200' };
+
   // Resolve character info with effects applied (Seer sees evil except Saboteur, Oracle sees Seer candidates including Phantom)
   const resolvedInfo = characterRegistry.resolveInfo(ctx);
 
@@ -273,27 +422,125 @@ export function CharacterInfoPanel({
       label.includes('?')
     );
 
+  // Get character's actions and effects for display
+  const characterActions = characterDef?.actions || [];
+  const characterEffects = characterDef?.effects || [];
+  const hasAbilities = characterActions.length > 0 || characterEffects.length > 0;
+
   return (
-    <div className={`rounded-2xl border ${teamBorderColor} bg-gradient-to-br ${teamGradient} bg-stone-800/50 overflow-hidden shadow-lg`}>
-      {/* Header with character name */}
+    <div
+      className={`rounded-2xl border ${teamBorderColor} bg-gradient-to-br ${teamGradient} bg-stone-800/50 overflow-hidden shadow-lg ${teamGlow}`}
+    >
+      {/* Character Card Header with Icon */}
       <div className="p-4 pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Your Role</p>
-            <h3 className={`text-lg sm:text-xl font-bold ${teamAccent} truncate`}>
-              {player.character ?? 'Unknown'}
-            </h3>
+        <div className="flex items-start gap-3">
+          {/* Character Icon/Artwork */}
+          <div
+            className={`shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br ${iconConfig.bgGradient} flex items-center justify-center shadow-lg ring-2 ring-white/10`}
+            aria-hidden="true"
+          >
+            <span className="text-2xl sm:text-3xl">{iconConfig.icon}</span>
           </div>
-          <span className={`shrink-0 px-2 py-1 rounded-lg text-[10px] uppercase tracking-wider font-medium ${teamBadgeBg} ${teamAccent}`}>
-            {player.team ?? 'Unknown'}
-          </span>
+
+          {/* Character Name and Team */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">
+                  Your Role
+                </p>
+                <h3
+                  className={`text-lg sm:text-xl font-bold ${teamAccent} truncate`}
+                >
+                  {player.character ?? 'Unknown'}
+                </h3>
+              </div>
+              <span
+                className={`shrink-0 px-2 py-1 rounded-lg text-[10px] uppercase tracking-wider font-medium ${teamBadgeBg} ${teamAccent}`}
+              >
+                {player.team ?? 'Unknown'}
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* Character description */}
-        <p className="text-xs sm:text-sm text-gray-400 mt-2 leading-relaxed">
+        {/* Character Description */}
+        <p className="text-xs sm:text-sm text-gray-400 mt-3 leading-relaxed">
           {characterDef?.description ?? 'Unknown character abilities'}
         </p>
       </div>
+
+      {/* Special Abilities Section */}
+      {hasAbilities && (
+        <div className="border-t border-stone-700/50 bg-stone-800/20 px-4 py-3">
+          <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">
+            Special Abilities
+          </p>
+          <div className="space-y-2">
+            {/* Actions */}
+            {characterActions.map((actionId) => {
+              const actionDisplay = ACTION_DISPLAYS[actionId];
+              if (!actionDisplay) return null;
+
+              return (
+                <div
+                  key={actionId}
+                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-stone-700/40 border border-stone-600/30"
+                >
+                  <span
+                    className="shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center text-base"
+                    aria-hidden="true"
+                  >
+                    {actionDisplay.icon}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-gray-200 truncate">
+                      {actionDisplay.name}
+                    </p>
+                    <p className="text-[10px] text-gray-500 truncate">
+                      {actionDisplay.shortDesc}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-[9px] text-amber-400/80 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                    1x
+                  </span>
+                </div>
+              );
+            })}
+
+            {/* Effects */}
+            {characterEffects.map((effectId) => {
+              const effectDisplay = EFFECT_DISPLAYS[effectId];
+              if (!effectDisplay) return null;
+
+              return (
+                <div
+                  key={effectId}
+                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-purple-500/10 border border-purple-500/20"
+                >
+                  <span
+                    className="shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-fuchsia-500/20 flex items-center justify-center text-base"
+                    aria-hidden="true"
+                  >
+                    {effectDisplay.icon}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-purple-200 truncate">
+                      {effectDisplay.name}
+                    </p>
+                    <p className="text-[10px] text-purple-400/70 truncate">
+                      {effectDisplay.shortDesc}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-[9px] text-purple-400/80 bg-purple-500/10 px-1.5 py-0.5 rounded">
+                    Passive
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Known Information Section */}
       {resolvedInfo.knownPlayers && resolvedInfo.knownPlayers.length > 0 && (
@@ -321,24 +568,32 @@ export function CharacterInfoPanel({
               const isEvil = label?.toLowerCase().includes('evil');
               const isSeer = label?.toLowerCase().includes('seer');
 
-              let pillClasses = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors';
+              let pillClasses =
+                'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors';
+              let iconEmoji = '👤';
               if (isEvil) {
-                pillClasses += ' bg-red-500/20 text-red-300 border border-red-500/30';
+                pillClasses +=
+                  ' bg-red-500/20 text-red-300 border border-red-500/30';
+                iconEmoji = '😈';
               } else if (isSeer) {
-                pillClasses += ' bg-purple-500/20 text-purple-300 border border-purple-500/30';
+                pillClasses +=
+                  ' bg-purple-500/20 text-purple-300 border border-purple-500/30';
+                iconEmoji = '👁️';
               } else {
-                pillClasses += ' bg-stone-700/50 text-gray-300 border border-stone-600/50';
+                pillClasses +=
+                  ' bg-stone-700/50 text-gray-300 border border-stone-600/50';
               }
 
               return (
                 <div key={playerId} className={pillClasses}>
+                  <span className="text-sm" aria-hidden="true">
+                    {iconEmoji}
+                  </span>
                   <span className="truncate max-w-[100px]">
                     {knownPlayer?.display_name ?? 'Unknown'}
                   </span>
                   {label && (
-                    <span className="opacity-60 text-[10px]">
-                      {label}
-                    </span>
+                    <span className="opacity-60 text-[10px]">{label}</span>
                   )}
                 </div>
               );
