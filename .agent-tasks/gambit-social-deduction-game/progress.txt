@@ -770,3 +770,21 @@
   - Result state stored locally - ActionResult from executeAction contains `gameEnded`, `winner`, `message` for displaying outcome
   - Waiting state shows Assassin's name dynamically by finding the Assassin player from the players list
   - Wrapper function pattern (AssassinationPhaseWrapper) in page file extracts props from useGameFlow context
+
+---
+## 2026-01-25 - component-action-panel
+- **What was implemented**: Full ActionPanel component with action filtering, target selection, and execution
+- **Files changed**: 
+  - `app/components/ActionPanel.tsx` (created - full ActionPanel with TargetSelector)
+  - `app/components/GameBoard.tsx` (updated - removed placeholder, uses new ActionPanel)
+  - `app/contexts/GameFlowContext.tsx` (updated - added actions array to context value)
+- **Learnings:**
+  - ActionPanel uses state machine pattern (`PanelState`) for clear UI flow: idle → selecting → executing → result
+  - CharacterRegistry.get(character) provides character definition with `actions` array of ActionIds
+  - ActionRegistry.getAvailableActions(ctx, characterActions, usedActionIds) filters by phase and use limits
+  - getUsedActionIds(playerId, gameActions) extracts special action IDs from game_actions array
+  - TargetSelector is embedded inline within ActionPanel - can be extracted in component-target-selector story
+  - GameFlowContext needed to expose `actions` array to track used actions - added to context interface and value
+  - For actions without targets (minTargets: 0), execute immediately without showing TargetSelector
+  - ResultDisplay component handles both success/error states with appropriate styling and game-end messaging
+  - Click debouncing (CLICK_DEBOUNCE_MS) prevents double-submission of actions
