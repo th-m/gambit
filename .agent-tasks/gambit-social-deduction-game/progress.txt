@@ -298,3 +298,16 @@
   - Modifier type `force_pass` is already handled in VoteProcessor's `processMissionResult` - sets failVotes to 0
   - Follow same pattern as assassinate: separate ActionDefinition, handler factory, and registration functions
   - No need to check requiresOnTeam for actions that work from outside the mission team
+
+---
+## 2026-01-25 - action-plant-beeper
+- **What was implemented**: Plant beeper action for the Tracker character to tag players
+- **Files changed**: 
+  - `app/actions/plantBeeper.ts` (created - action definition and handler)
+- **Learnings:**
+  - Multi-target validation extracts targets first, then checks each individually for existence/alive status
+  - Team validation checks both targets have `team` assigned (not null) before comparing alignments
+  - Sorting teams alphabetically ['evil', 'good'] provides deterministic comparison for 1-good-1-evil requirement
+  - Status expiration uses `expiresAtRound` parameter on `addStatus` - set to current round for end-of-round cleanup
+  - Handler creates separate status for each target using loop over targetIds
+  - Vibration trigger handled elsewhere in VoteProcessor - action just creates the 'beepered' status

@@ -348,7 +348,7 @@
         "Creates player_status for each target",
         "Tagged players' devices vibrate on vote reveal"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "action-protect",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 21,
+    "completed_features": 22,
     "categories": {
       "functional": 68,
       "visual": 9,
