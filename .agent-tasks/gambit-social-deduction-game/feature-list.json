@@ -532,7 +532,7 @@
         "Returns VoteResult with success, allVotesIn, result, tally",
         "Returns 400 for invalid vote"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "api-games-team",
@@ -550,7 +550,7 @@
         "Returns 400 for wrong count/invalid players",
         "Returns 403 for non-leader"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "api-games-action",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 30,
+    "completed_features": 31,
     "categories": {
       "functional": 68,
       "visual": 9,

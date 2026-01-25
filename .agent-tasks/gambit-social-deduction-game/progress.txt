@@ -424,3 +424,27 @@
   - Apply player updates in a loop before updating game state to ensure atomicity
   - Game state update sets: status='playing', phase='voting_for_leader', current_round=1, crown_index from assignment
   - Response includes updated game state so client can immediately reflect changes
+
+---
+## 2026-01-25 - api-games-vote
+- **What was implemented**: POST /api/games/:gameId/vote endpoint for leader and mission votes
+- **Files changed**: 
+  - `app/routes/api.games.$gameId.vote.tsx` (created)
+- **Learnings:**
+  - VoteProcessor handles all complex validation (phase check, duplicate votes, team membership, good player restrictions) - route just needs to delegate
+  - Use `gameService.getPlayer(gameId, userId)` to find a player by user ID (not player ID) in a game
+  - Route validates vote format before passing to processor - use type guards like `isValidVote(voteType, vote)` for type narrowing
+  - Return 403 for "player not in game" (authorization error) vs 400 for "invalid vote" (bad request)
+  - VoteResult type already matches API response schema - can return directly from processor
+
+---
+## 2026-01-25 - api-games-team
+- **What was implemented**: POST /api/games/:gameId/team endpoint for leader team selection
+- **Files changed**: 
+  - `app/routes/api.games.$gameId.team.tsx` (created)
+- **Learnings:**
+  - StateValidator.validateTeamSelection handles all complex validation (leader check, team size, alive players) - route delegates to it
+  - Game type has nullable fields (`phase: GamePhase | null`, `selected_team: string[] | null`) - response interfaces must match
+  - Map validation error messages to HTTP status codes: "Only the current leader" → 403, other validation errors → 400
+  - Route updates two game fields atomically: `selected_team` and `phase` (to 'mission_voting')
+  - Validate request body structure (teamIds is array, all items are strings) before passing to StateValidator
