@@ -725,3 +725,48 @@
   - PlayerGrid uses aria-pressed for accessibility on toggle buttons, role="group" for screen reader grouping
   - Double-click prevention via ref timestamp (CLICK_DEBOUNCE_MS) pattern, consistent with LeaderVoting component
   - Visual feedback: selected players have blue background/border, checkmark badge, and opacity changes for limit states
+
+---
+## 2026-01-25 - component-mission-voting
+- **What was implemented**: Full MissionVoting component with real-time vote tracking and results display
+- **Files changed**: 
+  - `app/components/MissionVoting.tsx` (created - full voting UI component)
+  - `app/routes/games.$game.play.tsx` (updated - imports and uses MissionVoting component)
+- **Learnings:**
+  - Component follows same pattern as LeaderVoting: useVoteSubscription for real-time tracking, useVoteCompletion for detecting completion
+  - VoteCompletionResult from useVoteCompletion only has: voteType, voteCount, expectedCount, votes - no tally or result from server
+  - Team membership check via `game.selected_team?.includes(currentPlayer.id)`
+  - Good players cannot vote fail: check `isEvil` before showing/handling Fail button
+  - Shuffled results display using Fisher-Yates algorithm prevents vote attribution while showing totals
+  - WaitingMessage component differs from LeaderVoting - shows team member names for non-team observers
+  - Reset state on `game.current_round` change only (not rejection_count like LeaderVoting) since missions don't have rejections
+
+---
+## 2026-01-25 - util-game-utils
+- **What was implemented**: Centralized game utility functions for game logic
+- **Files changed**: 
+  - `app/utils/game-utils.ts` (created - utility functions)
+  - `app/utils/game-utils.test.ts` (created - 67 unit tests)
+  - `app/types/game.ts` (updated - added "Assassin failed to identify the Seer" EndReason)
+- **Learnings:**
+  - Some utility functions already existed in services (GameService, VoteProcessor, StateValidator) - this file consolidates and extends them
+  - MISSION_SIZES constant is exported for direct access in tests and components that need to check all valid values
+  - `formatJoinLink` handles browser vs server context via `typeof window !== 'undefined'` check
+  - `checkWinCondition` returns `WinConditionResult` with `triggerAssassination` flag for good victory that should go to assassination first
+  - Multiple helper functions for specific win conditions (`checkAssassinationFailed`, `checkAssassinationSucceeded`, `checkRejectionWin`) allow modular win checking
+  - When testing Object.keys() with numeric keys, use `.sort((a, b) => a - b)` for numeric sort instead of default lexicographic sort
+  - EndReason type needed to be extended to include "Assassin failed to identify the Seer" for type safety
+
+---
+## 2026-01-25 - component-assassination
+- **What was implemented**: AssassinationPhase component for the assassination phase UI
+- **Files changed**: 
+  - `app/components/AssassinationPhase.tsx` (created - full assassination UI)
+  - `app/routes/games.$game.play.tsx` (updated - imports and uses AssassinationPhase)
+- **Learnings:**
+  - Component follows same pattern as other voting components: props for game, players, currentPlayer, and callback (onExecuteAction)
+  - Player grid uses `aria-pressed` for accessibility on toggle buttons, `role="group"` for screen reader grouping
+  - Filter targetable players to exclude the Assassin themselves (can't self-target)
+  - Result state stored locally - ActionResult from executeAction contains `gameEnded`, `winner`, `message` for displaying outcome
+  - Waiting state shows Assassin's name dynamically by finding the Assassin player from the players list
+  - Wrapper function pattern (AssassinationPhaseWrapper) in page file extracts props from useGameFlow context

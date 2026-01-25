@@ -463,7 +463,7 @@
         "getRequiredFailVotes(playerCount, round) returns fail threshold",
         "checkWinCondition(game) evaluates all win conditions"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "api-games-create",
@@ -842,7 +842,7 @@
         "Results display shuffled (no attribution)",
         "Handles vote modifiers (rig_vote)"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "component-assassination",
@@ -858,7 +858,7 @@
         "Wrong target ends game for good",
         "Displays result and transitions to game over"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "component-action-panel",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 86,
-    "completed_features": 49,
+    "completed_features": 51,
     "categories": {
       "functional": 68,
       "visual": 9,
