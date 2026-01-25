@@ -15,6 +15,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router';
 import { useGameFlow } from '~/contexts/GameFlowContext';
 import { ActionPanel } from '~/components/ActionPanel';
+import { PlayerList } from '~/components/PlayerList';
 import { characterRegistry } from '~/registry/CharacterRegistry';
 import type {
   GamePhase,
@@ -255,66 +256,7 @@ function PhaseIndicator({ phase }: PhaseIndicatorProps) {
   );
 }
 
-// =============================================================================
-// Player List Component (for reference)
-// =============================================================================
-
-interface PlayerListProps {
-  players: Player[];
-  currentPlayerId: string;
-  leaderId?: string;
-  selectedTeam?: string[] | null;
-}
-
-export function PlayerList({ players, currentPlayerId, leaderId, selectedTeam }: PlayerListProps) {
-  const sortedPlayers = [...players].sort((a, b) => (a.seat_order ?? 0) - (b.seat_order ?? 0));
-
-  return (
-    <div className="bg-stone-800 rounded-xl p-4 border border-stone-700">
-      <h3 className="font-semibold mb-3 text-gray-300">Players</h3>
-      <div className="space-y-2">
-        {sortedPlayers.map((player) => {
-          const isCurrentPlayer = player.id === currentPlayerId;
-          const isLeader = player.id === leaderId;
-          const isOnTeam = selectedTeam?.includes(player.id);
-          const isEliminated = !player.is_alive;
-
-          return (
-            <div
-              key={player.id}
-              className={`flex items-center justify-between p-2 rounded-lg ${
-                isCurrentPlayer ? 'bg-stone-700' : 'bg-stone-800'
-              } ${isEliminated ? 'opacity-50' : ''}`}
-            >
-              <div className="flex items-center gap-2">
-                {isLeader && (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 text-yellow-400"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M12 1l3.22 6.636 7.28.772-5.384 4.96 1.554 7.132L12 17.27 5.33 20.5l1.554-7.132L1.5 8.408l7.28-.772L12 1z" />
-                  </svg>
-                )}
-                <span className={isCurrentPlayer ? 'font-semibold' : ''}>{player.display_name}</span>
-                {isCurrentPlayer && <span className="text-xs text-gray-500">(you)</span>}
-              </div>
-              <div className="flex items-center gap-2">
-                {isOnTeam && (
-                  <span className="text-xs px-2 py-0.5 bg-blue-900/50 text-blue-400 rounded">Team</span>
-                )}
-                {isEliminated && (
-                  <span className="text-xs px-2 py-0.5 bg-red-900/50 text-red-400 rounded">Eliminated</span>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+// PlayerList is now imported from ~/components/PlayerList
 
 // =============================================================================
 // Loading Spinner Component
