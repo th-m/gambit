@@ -648,7 +648,7 @@
         "Filters votes by round and phase",
         "Updates vote map in real-time"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "hook-vote-completion",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 35,
+    "completed_features": 36,
     "categories": {
       "functional": 68,
       "visual": 9,

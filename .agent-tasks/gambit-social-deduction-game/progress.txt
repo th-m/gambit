@@ -525,3 +525,19 @@
   - For DELETE events, filter out the removed record by id
   - Channel names must be unique per subscription to avoid conflicts - use pattern `game-sub-${gameId}`, `game-sub-players-${gameId}`, etc.
   - Supports SSR hydration via `initialGame`, `initialPlayers`, `initialActions` options
+
+---
+## 2026-01-25 - hook-vote-subscription
+- **What was implemented**: useVoteSubscription hook for real-time vote tracking
+- **Files changed**: 
+  - `app/hooks/useVoteSubscription.ts` (created)
+  - `app/hooks/useVoteSubscription.test.tsx` (created - 31 unit tests)
+- **Learnings:**
+  - Vote actions stored in `game_actions` table with action_type of `vote_yes`, `vote_no`, `vote_pass`, or `vote_fail`
+  - Hook filters by phase type: leader votes (yes/no) only for voting_for_leader, mission votes (pass/fail) only for mission_voting
+  - `actionsToVoteMap` helper converts GameAction[] to Record<playerId, vote> with filtering by round, phase, and vote type
+  - For non-voting phases (lobby, selecting_team, etc.), hook returns empty votes and skips subscriptions
+  - Channel naming pattern: `vote-sub-${gameId}-${round}-${phase}` ensures unique subscription per round/phase combination
+  - Real-time INSERT events must re-validate round, phase, and action type before updating local state
+  - `renderHook` from @testing-library/react is cleaner for testing hooks than wrapping in consumer components
+  - Supabase `.in()` query filter used to fetch only vote-related actions in one query
