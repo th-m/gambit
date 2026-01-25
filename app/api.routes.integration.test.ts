@@ -19,12 +19,12 @@ import { registerProtectAction, registerProtectHandler } from '~/actions/protect
 import { registerSabotageAction, registerSabotageHandler } from '~/actions/sabotage';
 
 // Import route action functions
-import { action as createGameAction } from './api.games.create';
-import { action as joinGameAction } from './api.games.$gameId.join';
-import { action as startGameAction } from './api.games.$gameId.start';
-import { action as voteAction } from './api.games.$gameId.vote';
-import { action as teamAction } from './api.games.$gameId.team';
-import { action as gameAction } from './api.games.$gameId.action';
+import { action as createGameAction } from './routes/api.games.create';
+import { action as joinGameAction } from './routes/api.games.$gameId.join';
+import { action as startGameAction } from './routes/api.games.$gameId.start';
+import { action as voteAction } from './routes/api.games.$gameId.vote';
+import { action as teamAction } from './routes/api.games.$gameId.team';
+import { action as gameAction } from './routes/api.games.$gameId.action';
 
 // =============================================================================
 // Mock Supabase Auth

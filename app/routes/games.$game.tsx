@@ -4,18 +4,23 @@
  * Displays the lobby for a game before it starts.
  * Shows player list, game code, and start button for host.
  * Redirects to game when status changes to 'playing'.
+ *
+ * Uses React.lazy() for code splitting of lobby component.
  */
 
 import { useParams, useNavigate, useLoaderData } from 'react-router';
 import type { LoaderFunctionArgs } from 'react-router';
 import { createClient } from '~/lib/supabase/server';
 import { createClient as createBrowserClient } from '~/lib/supabase/client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { Link } from 'react-router';
 import { gameService } from '~/services/GameService';
 import { useGameApi } from '~/hooks/useGameApi';
-import { Lobby } from '~/components/Lobby';
+import { LobbyLoadingSkeleton } from '~/components/RouteLoadingIndicator';
 import type { Game, Player } from '~/types/game';
+
+// Lazy load the Lobby component
+const Lobby = lazy(() => import('~/components/Lobby').then(m => ({ default: m.Lobby })));
 
 interface LoaderData {
   game: Game | null;
@@ -192,17 +197,19 @@ export default function GameLobbyPage() {
 
   return (
     <div className="min-h-screen bg-stone-900 text-white p-6">
-      <Lobby
-        game={game}
-        players={players}
-        currentUserId={currentUserId}
-        onStartGame={handleStartGame}
-        onLeaveGame={handleLeaveGame}
-        isStarting={isLoading}
-        isLeaving={isLeaving}
-        startError={apiError}
-        leaveError={leaveError}
-      />
+      <Suspense fallback={<LobbyLoadingSkeleton />}>
+        <Lobby
+          game={game}
+          players={players}
+          currentUserId={currentUserId}
+          onStartGame={handleStartGame}
+          onLeaveGame={handleLeaveGame}
+          isStarting={isLoading}
+          isLeaving={isLeaving}
+          startError={apiError}
+          leaveError={leaveError}
+        />
+      </Suspense>
 
       {/* Back link */}
       <div className="mt-6 text-center">

@@ -3,22 +3,30 @@
  *
  * Main game page container that wraps content in GameFlowProvider
  * and renders the GameBoard component with phase-appropriate content.
+ *
+ * Uses React.lazy() for code splitting of heavy game components.
  */
 
 import { useParams, useNavigate, useLoaderData } from 'react-router';
 import type { LoaderFunctionArgs } from 'react-router';
 import { createClient } from '~/lib/supabase/server';
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router';
 import { gameService } from '~/services/GameService';
 import { GameFlowProvider, useGameFlow } from '~/contexts/GameFlowContext';
-import { GameBoard } from '~/components/GameBoard';
-import { LeaderVoting } from '~/components/LeaderVoting';
-import { TeamSelection } from '~/components/TeamSelection';
-import { MissionVoting } from '~/components/MissionVoting';
-import { AssassinationPhase } from '~/components/AssassinationPhase';
-import { GameOver } from '~/components/GameOver';
+import { GameLoadingSkeleton, LoadingSpinner } from '~/components/RouteLoadingIndicator';
 import type { Game, Player, GamePhase } from '~/types/game';
+
+// =============================================================================
+// Lazy-loaded Game Components (Code Splitting)
+// =============================================================================
+
+const GameBoard = lazy(() => import('~/components/GameBoard').then(m => ({ default: m.GameBoard })));
+const LeaderVoting = lazy(() => import('~/components/LeaderVoting').then(m => ({ default: m.LeaderVoting })));
+const TeamSelection = lazy(() => import('~/components/TeamSelection').then(m => ({ default: m.TeamSelection })));
+const MissionVoting = lazy(() => import('~/components/MissionVoting').then(m => ({ default: m.MissionVoting })));
+const AssassinationPhase = lazy(() => import('~/components/AssassinationPhase').then(m => ({ default: m.AssassinationPhase })));
+const GameOver = lazy(() => import('~/components/GameOver').then(m => ({ default: m.GameOver })));
 
 // =============================================================================
 // Types
@@ -85,7 +93,20 @@ export function meta() {
 }
 
 // =============================================================================
-// Phase Components (Placeholders - will be separate stories)
+// Phase Loading Fallback
+// =============================================================================
+
+function PhaseLoadingFallback() {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 gap-4">
+      <LoadingSpinner size="lg" />
+      <p className="text-stone-400 text-sm">Loading phase...</p>
+    </div>
+  );
+}
+
+// =============================================================================
+// Phase Components (with Suspense boundaries)
 // =============================================================================
 
 function LeaderVotingPhase() {
@@ -94,12 +115,14 @@ function LeaderVotingPhase() {
   if (!game || !currentPlayer) return null;
 
   return (
-    <LeaderVoting
-      game={game}
-      players={players}
-      currentPlayer={currentPlayer}
-      onVote={submitLeaderVote}
-    />
+    <Suspense fallback={<PhaseLoadingFallback />}>
+      <LeaderVoting
+        game={game}
+        players={players}
+        currentPlayer={currentPlayer}
+        onVote={submitLeaderVote}
+      />
+    </Suspense>
   );
 }
 
@@ -109,12 +132,14 @@ function TeamSelectionPhase() {
   if (!game || !currentPlayer) return null;
 
   return (
-    <TeamSelection
-      game={game}
-      players={players}
-      currentPlayer={currentPlayer}
-      onSelectTeam={selectTeam}
-    />
+    <Suspense fallback={<PhaseLoadingFallback />}>
+      <TeamSelection
+        game={game}
+        players={players}
+        currentPlayer={currentPlayer}
+        onSelectTeam={selectTeam}
+      />
+    </Suspense>
   );
 }
 
@@ -124,12 +149,14 @@ function MissionVotingPhase() {
   if (!game || !currentPlayer) return null;
 
   return (
-    <MissionVoting
-      game={game}
-      players={players}
-      currentPlayer={currentPlayer}
-      onVote={submitMissionVote}
-    />
+    <Suspense fallback={<PhaseLoadingFallback />}>
+      <MissionVoting
+        game={game}
+        players={players}
+        currentPlayer={currentPlayer}
+        onVote={submitMissionVote}
+      />
+    </Suspense>
   );
 }
 
@@ -151,17 +178,19 @@ function AssassinationPhaseWrapper() {
   if (!game || !currentPlayer) return null;
 
   return (
-    <AssassinationPhase
-      game={game}
-      players={players}
-      currentPlayer={currentPlayer}
-      onExecuteAction={executeAction}
-    />
+    <Suspense fallback={<PhaseLoadingFallback />}>
+      <AssassinationPhase
+        game={game}
+        players={players}
+        currentPlayer={currentPlayer}
+        onExecuteAction={executeAction}
+      />
+    </Suspense>
   );
 }
 
 // =============================================================================
-// Game Over Screen - Uses GameOver component
+// Game Over Screen - Uses GameOver component with lazy loading
 // =============================================================================
 
 function GameOverScreen() {
@@ -191,12 +220,14 @@ function GameOverScreen() {
   };
 
   return (
-    <GameOver
-      game={game}
-      players={players}
-      currentPlayer={currentPlayer}
-      onPlayAgain={handlePlayAgain}
-    />
+    <Suspense fallback={<PhaseLoadingFallback />}>
+      <GameOver
+        game={game}
+        players={players}
+        currentPlayer={currentPlayer}
+        onPlayAgain={handlePlayAgain}
+      />
+    </Suspense>
   );
 }
 
@@ -228,7 +259,7 @@ function renderPhaseContent(phase: GamePhase | null): React.ReactNode {
 }
 
 // =============================================================================
-// Game Board with Phase Content
+// Game Board with Phase Content (uses Suspense for lazy loading)
 // =============================================================================
 
 function GameBoardWithPhases() {
@@ -243,7 +274,11 @@ function GameBoardWithPhases() {
     );
   }
 
-  return <GameBoard renderPhase={renderPhaseContent} />;
+  return (
+    <Suspense fallback={<GameLoadingSkeleton />}>
+      <GameBoard renderPhase={renderPhaseContent} />
+    </Suspense>
+  );
 }
 
 // =============================================================================
