@@ -571,3 +571,18 @@
   - `credentials: 'include'` required on fetch calls to include auth cookies
   - Provide additional methods beyond spec (createGame, joinGame) for completeness
   - Export response types (CreateGameResponse, JoinGameResponse, etc.) for consumers to use in type annotations
+
+---
+## 2026-01-25 - page-index
+- **What was implemented**: Enhanced home page with game creation and join functionality
+- **Files changed**: 
+  - `app/routes/__index.tsx` (updated - added auth check, game creation, join by code)
+  - `app/routes/api.games.lookup.tsx` (created - game lookup by key endpoint)
+- **Learnings:**
+  - React Router 7 loader can check authentication via `supabase.auth.getUser()` and pass `isAuthenticated` boolean to component
+  - Game code validation regex: `/^[A-Za-z0-9]{6,8}$/` for 6-8 alphanumeric characters
+  - Created new `/api/games/lookup?key=XXXX` endpoint for looking up games by shareable code
+  - Use `useNavigate` hook for client-side redirects after API success
+  - Display name can be pre-populated from user email (split at @) for better UX
+  - Loading states use inline SVG spinners for consistent animation
+  - Input transformation (`.toUpperCase()`) in onChange provides immediate feedback for game codes

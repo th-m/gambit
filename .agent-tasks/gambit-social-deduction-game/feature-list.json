@@ -724,7 +724,7 @@
         "Error handling with user feedback",
         "Redirects to lobby after create/join"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "page-lobby",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 37,
+    "completed_features": 38,
     "categories": {
       "functional": 68,
       "visual": 9,
