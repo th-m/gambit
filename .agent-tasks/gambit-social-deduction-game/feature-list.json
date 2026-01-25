@@ -363,7 +363,7 @@
         "Protection expires at end of round",
         "Protected player cannot be assassinated"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "action-sabotage",
@@ -377,7 +377,7 @@
         "Adds one extra fail vote to mission",
         "Creates game_modifier for current round"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-actions-all",
@@ -394,7 +394,7 @@
         "Test sabotage adds fail vote to tally",
         "Test actions respect use limits"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "effect-appears-as-seer",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 22,
+    "completed_features": 25,
     "categories": {
       "functional": 68,
       "visual": 9,

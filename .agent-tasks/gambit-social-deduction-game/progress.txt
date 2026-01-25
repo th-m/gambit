@@ -311,3 +311,42 @@
   - Status expiration uses `expiresAtRound` parameter on `addStatus` - set to current round for end-of-round cleanup
   - Handler creates separate status for each target using loop over targetIds
   - Vibration trigger handled elsewhere in VoteProcessor - action just creates the 'beepered' status
+
+---
+## 2026-01-25 - action-protect
+- **What was implemented**: Protect action for Guardian character to shield players from assassination
+- **Files changed**: 
+  - `app/actions/protect.ts` (created - action definition and handler)
+- **Learnings:**
+  - Protect is simpler than plant_beeper - single target, no team validation needed
+  - Protection status expiration set to current round via `expiresAtRound` parameter
+  - Assassinate action already checks for 'protected' status in both execute and handler - no changes needed
+  - Team validation in execute confirms player is on good team (Guardian is good character)
+  - Follow established pattern: ActionDefinition, handler factory, registration functions
+
+---
+## 2026-01-25 - action-sabotage
+- **What was implemented**: Sabotage action for the Saboteur character to add extra fail vote
+- **Files changed**: 
+  - `app/actions/sabotage.ts` (created - action definition and handler)
+- **Learnings:**
+  - Sabotage follows same pattern as rig_vote but with `requiresOnTeam: true` - must be on mission team
+  - Uses `extra_fail` modifier which is already handled by VoteProcessor.processMissionResult
+  - No targets needed (minTargets: 0, maxTargets: 0) - affects the current mission vote tally
+  - Team membership check in execute validates player is in selected_team array
+  - VoteProcessor already increments failVotes when `extra_fail` modifier exists for current round
+
+---
+## 2026-01-25 - test-actions-all
+- **What was implemented**: Comprehensive integration tests for all character actions (assassinate, rig_vote, plant_beeper, protect, sabotage)
+- **Files changed**: 
+  - `app/actions/actions.integration.test.ts` (created - 19 integration tests)
+- **Learnings:**
+  - Integration tests need fresh service instances per test - use `createTestEnv()` helper to create GameService, VoteProcessor, ActionProcessor
+  - Must register both actions (ActionRegistry) and handlers (ActionProcessor) before testing
+  - VoteResult uses 'passed'/'failed' strings, not 'pass'/'fail' - match actual return values
+  - ActionRegistry error messages include full context: "Action X has already been used the maximum number of times (N)"
+  - Test helper `setupGameWithPlayers` handles game creation, player addition with characters, and game status setup
+  - Players must be added BEFORE setting game status to 'playing' (GameService.addPlayer checks status)
+  - Protection blocking is tested by: protect first → assassinate → verify target still alive
+  - Modifier integration tested by: add modifier → submit votes → verify result reflects modifier (force_pass, extra_fail)
