@@ -216,3 +216,18 @@
   - Test both modifiers (`force_pass`, `extra_fail`) and their effects on mission outcomes
   - Leader vote approval requires strict majority (ties go to rejection)
   - Verify the full chain: vote submission → tally → result processing → state update
+
+---
+## 2026-01-25 - service-action-processor
+- **What was implemented**: ActionProcessor service for executing character special abilities
+- **Files changed**: 
+  - `app/services/ActionProcessor.ts` (created)
+- **Learnings:**
+  - ActionProcessor delegates core validation to ActionRegistry (phase, use limits, targets) - keeps single responsibility
+  - Inject dependencies (GameService, VoteProcessor) via constructor for testability; use singleton defaults for production
+  - Handler registration pattern (`registerHandler(actionId, handler)`) allows action-specific side effects (e.g., eliminate player, add modifier) to be defined separately from validation
+  - `buildContext()` helper creates GameContext by aggregating game state, players, modifiers, and statuses
+  - `getAllStatuses()` collects player statuses across all players in game - returns flat array, not array of arrays
+  - Record action AFTER successful execution via registry, not before
+  - Export helper methods (eliminatePlayer, addModifier, addStatus, endGame) for action handlers to use
+  - ActionProcessor orchestrates: get game → get player → validate → execute via registry → record action → run handler

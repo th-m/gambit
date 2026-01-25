@@ -254,7 +254,7 @@
         "Validates target count and requirements",
         "Returns ActionResult with success, message, gameEnded, winner"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-service-action-processor",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 15,
+    "completed_features": 16,
     "categories": {
       "functional": 68,
       "visual": 9,
