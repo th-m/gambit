@@ -231,3 +231,18 @@
   - Record action AFTER successful execution via registry, not before
   - Export helper methods (eliminatePlayer, addModifier, addStatus, endGame) for action handlers to use
   - ActionProcessor orchestrates: get game → get player → validate → execute via registry → record action → run handler
+
+---
+## 2026-01-25 - test-service-action-processor
+- **What was implemented**: Comprehensive unit tests for ActionProcessor class (55 tests)
+- **Files changed**: 
+  - `app/services/ActionProcessor.test.ts` (created - 55 unit tests)
+- **Learnings:**
+  - Test helper `setupGameWithPlayers` creates players with specific characters (Assassin, Seer, Guardian, Fixer, Tracker) for action-specific tests
+  - VoteProcessor's `checkMissionVoteCompletion` is private - test via `submitMissionVote` which returns `VoteResult` after last vote
+  - Handler result is only used by ActionProcessor when `gameEnded !== undefined` - set `gameEnded: false` to use handler message without ending game
+  - Test protection blocking: add status via `addStatus`, register handler that checks `hasStatus`, verify target still alive after action
+  - Test action side effects (assassination, rig_vote, plant_beeper, sabotage) by registering realistic handlers that use processor's helper methods
+  - `createTestAction` helper simplifies ActionDefinition creation with sensible defaults (phases, targets, validation)
+  - Test both success and error paths for validation: game not found, player not found, player not in game, player dead, action not registered
+  - Action handlers receive full `GameContext`, `targetIds[]`, and the `processor` instance for calling helper methods

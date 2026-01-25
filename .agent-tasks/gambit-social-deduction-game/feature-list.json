@@ -271,7 +271,7 @@
         "Test beeper status created correctly",
         "Test sabotage adds extra fail vote"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "service-state-validator",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 16,
+    "completed_features": 17,
     "categories": {
       "functional": 68,
       "visual": 9,
