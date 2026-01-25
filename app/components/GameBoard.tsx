@@ -50,8 +50,10 @@ export function ScoreBoard({ game }: ScoreBoardProps) {
           {rounds.map((round) => {
             const isPast = round < (game.current_round ?? 1);
             const isCurrent = round === game.current_round;
-            const isGoodWin = round <= (game.good_victories ?? 0);
-            const isEvilWin = round <= (game.evil_victories ?? 0) && !isGoodWin;
+            // Show first good_victories completed rounds as good wins
+            const isGoodWin = isPast && round <= (game.good_victories ?? 0);
+            // Remaining past rounds are evil wins (since past = good + evil victories)
+            const isEvilWin = isPast && !isGoodWin;
 
             let bgColor = 'bg-stone-700';
             let borderColor = 'border-stone-600';
