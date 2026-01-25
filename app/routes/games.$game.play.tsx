@@ -17,6 +17,7 @@ import { LeaderVoting } from '~/components/LeaderVoting';
 import { TeamSelection } from '~/components/TeamSelection';
 import { MissionVoting } from '~/components/MissionVoting';
 import { AssassinationPhase } from '~/components/AssassinationPhase';
+import { GameOver } from '~/components/GameOver';
 import type { Game, Player, GamePhase } from '~/types/game';
 
 // =============================================================================
@@ -160,52 +161,42 @@ function AssassinationPhaseWrapper() {
 }
 
 // =============================================================================
-// Game Over Screen (Placeholder)
+// Game Over Screen - Uses GameOver component
 // =============================================================================
 
 function GameOverScreen() {
-  const { game, players } = useGameFlow();
+  const { game, players, currentPlayer } = useGameFlow();
 
   if (!game) return null;
 
-  const winnerColor = game.winner === 'good' ? 'text-blue-400' : 'text-red-400';
-  const winnerLabel = game.winner === 'good' ? 'Good Team Wins!' : 'Evil Team Wins!';
+  // Handler for "Play Again" - creates a new game and returns the gameId
+  const handlePlayAgain = async () => {
+    if (!currentPlayer) return null;
+    
+    try {
+      const response = await fetch('/api/games/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ displayName: currentPlayer.display_name }),
+      });
+      
+      if (!response.ok) return null;
+      
+      const data = await response.json();
+      return { gameId: data.game?.id || data.gameId };
+    } catch {
+      return null;
+    }
+  };
 
   return (
-    <div className="text-center py-12">
-      <h1 className={`text-4xl font-bold mb-4 ${winnerColor}`}>{winnerLabel}</h1>
-      {game.end_reason && <p className="text-gray-400 mb-8">{game.end_reason}</p>}
-
-      <div className="mb-8">
-        <h3 className="font-semibold mb-4 text-gray-300">Players</h3>
-        <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
-          {players.map((player) => (
-            <div
-              key={player.id}
-              className={`p-3 rounded-lg ${
-                player.team === 'good'
-                  ? 'bg-blue-900/30 border border-blue-700'
-                  : 'bg-red-900/30 border border-red-700'
-              }`}
-            >
-              <p className="font-medium">{player.display_name}</p>
-              <p className={`text-sm ${player.team === 'good' ? 'text-blue-400' : 'text-red-400'}`}>
-                {player.character}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex gap-4 justify-center">
-        <Link
-          to="/"
-          className="px-6 py-3 bg-stone-700 hover:bg-stone-600 rounded-xl font-semibold transition-colors"
-        >
-          Return Home
-        </Link>
-      </div>
-    </div>
+    <GameOver
+      game={game}
+      players={players}
+      currentPlayer={currentPlayer}
+      onPlayAgain={handlePlayAgain}
+    />
   );
 }
 
@@ -246,10 +237,8 @@ function GameBoardWithPhases() {
   // Show game over screen if finished
   if (game?.status === 'finished') {
     return (
-      <div className="min-h-screen bg-stone-900 text-white p-6">
-        <div className="max-w-4xl mx-auto">
-          <GameOverScreen />
-        </div>
+      <div className="min-h-screen bg-stone-900 text-white">
+        <GameOverScreen />
       </div>
     );
   }
