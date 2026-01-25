@@ -678,3 +678,19 @@
   - Use `useCallback` for callback props passed to child components to prevent unnecessary re-renders
   - ARIA attributes (`aria-label`, `aria-busy`, `role="alert"`) improve accessibility for screen readers
   - Page-level concerns (loaders, navigation, real-time subscriptions) stay in the page; pure presentation logic goes in the component
+
+---
+## 2026-01-25 - component-gameboard
+- **What was implemented**: GameBoard component extracted to reusable file with all sub-components
+- **Files changed**: 
+  - `app/components/GameBoard.tsx` (created - main GameBoard component)
+  - `app/routes/games.$game.play.tsx` (updated - imports and uses GameBoard)
+- **Learnings:**
+  - Extract presentation components from pages for better reusability - page handles routing/data, component handles presentation
+  - GameBoard accepts `renderPhase` prop to allow parent to provide phase-specific content while board handles layout
+  - ScoreBoard uses round indicators with color coding: current round has blue border, past rounds show good (blue) or evil (red) based on who won
+  - Progress bars visualize progress toward 3-win victory condition for each team
+  - Leader calculation: filter alive players, sort by seat_order, use crown_index % alivePlayers.length
+  - Export sub-components (ScoreBoard, CharacterInfoPanel, ActionPanel, PlayerList) for potential reuse elsewhere
+  - Vibration listener placeholder added in useEffect - will integrate with useVibration hook when implemented
+  - Phase components remain in the page file since they use useGameFlow() context methods (submitLeaderVote, selectTeam, etc.)
