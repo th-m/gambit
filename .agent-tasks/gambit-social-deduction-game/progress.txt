@@ -819,3 +819,30 @@
   - Hook returns `isSupported` boolean for UI to conditionally show vibration-related features
   - Manual `triggerVibration()` method useful for testing and user-initiated feedback
   - VibrationEvent type includes gameId, round, and targetPlayerIds for precise filtering
+
+---
+## 2026-01-25 - component-target-selector
+- **What was implemented**: Extracted TargetSelector into reusable component with full validation
+- **Files changed**: 
+  - `app/components/TargetSelector.tsx` (created - standalone component)
+  - `app/components/ActionPanel.tsx` (updated - imports TargetSelector)
+- **Learnings:**
+  - Extract embedded components when they have reusable value (TargetSelector used in ActionPanel, could be used in AssassinationPhase)
+  - Component props pattern: pass action definition for validation info, players array, current player ID for self-targeting logic
+  - Self-target actions (like 'protect') use `actionAllowsSelfTarget()` helper to determine if self-targeting is allowed
+  - validateTargets delegates to action's custom validateTargets function when provided for action-specific validation
+  - Use `aria-pressed` on toggle buttons and `role="group"` on container for screen reader accessibility
+  - SelectionCounter sub-component handles range display (e.g., "2/2" or "1/1-3 selected") with color coding
+  - atMaxAndNotSelected pattern disables unselected targets when max is reached, preventing confusion
+
+---
+## 2026-01-25 - component-character-info
+- **What was implemented**: Enhanced CharacterInfoPanel to display resolved character info with effects applied
+- **Files changed**: 
+  - `app/components/GameBoard.tsx` (updated - enhanced CharacterInfoPanel)
+- **Learnings:**
+  - CharacterRegistry.resolveInfo(ctx) already handles all effect logic: Seer excludes Saboteur (appears_as_good), Oracle includes Phantom (appears_as_seer)
+  - Component needs GameContext with game, players, currentPlayer, modifiers, statuses - props passed from parent that has access to useGameFlow()
+  - Unreliable info detection: check if knownPlayerLabels contain "?" (e.g., "Seer?") to show warning
+  - Color coding for labels: red for evil players, purple for Seer candidates, neutral for others
+  - CharacterDefinition.description provides the base description, CharacterInfo.description from resolveInfo provides contextual info about what they know
