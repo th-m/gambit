@@ -12,7 +12,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
-import type { Game, Player, Team, EndReason } from '~/types/game';
+import type { Game, Player, Team, EndReason, CharacterName } from '~/types/game';
 
 // =============================================================================
 // Types
@@ -35,34 +35,72 @@ export interface GameOverProps {
 // Animation Constants
 // =============================================================================
 
-const REVEAL_DELAY_MS = 300;
 const TITLE_DELAY_MS = 500;
 const ROLES_DELAY_MS = 1000;
 const BUTTONS_DELAY_MS = 1500;
-const CONFETTI_COUNT = 50;
-const PARTICLE_COUNT = 30;
+const CONFETTI_COUNT = 60;
+const PARTICLE_COUNT = 40;
+
+// =============================================================================
+// Character Icons Configuration
+// =============================================================================
+
+const CHARACTER_ICONS: Record<CharacterName, { icon: string; description: string }> = {
+  Seer: { icon: '👁️', description: 'Sees evil' },
+  Oracle: { icon: '🔮', description: 'Sees the Seer' },
+  Guardian: { icon: '🛡️', description: 'Protects allies' },
+  Tracker: { icon: '📍', description: 'Tracks players' },
+  Villager: { icon: '🏠', description: 'Pure of heart' },
+  Soldier: { icon: '⚔️', description: 'Fights for good' },
+  Assassin: { icon: '🗡️', description: 'Hunts the Seer' },
+  Fixer: { icon: '🔧', description: 'Rigs the system' },
+  Phantom: { icon: '👻', description: 'Appears as Seer' },
+  Saboteur: { icon: '💣', description: 'Hidden evil' },
+  Minion: { icon: '🦇', description: 'Servant of evil' },
+};
 
 // =============================================================================
 // Helper Functions
 // =============================================================================
 
 /**
- * Get display-friendly end reason text
+ * Get display-friendly end reason text with icon
  */
-function formatEndReason(reason: EndReason | null): string {
-  if (!reason) return '';
+function formatEndReason(reason: EndReason | null): { text: string; icon: string } {
+  if (!reason) return { text: '', icon: '' };
   
-  const reasonMap: Record<EndReason, string> = {
-    'Good completed 3 successful missions': 'The forces of good successfully completed 3 missions!',
-    'Evil sabotaged 3 missions': 'The forces of evil sabotaged 3 missions!',
-    'Seer assassinated': 'The Assassin successfully identified and eliminated the Seer!',
-    'Assassin failed to identify the Seer': 'The Assassin failed to find the Seer!',
-    'All evil players eliminated': 'All evil players have been eliminated!',
-    'Evil has majority control': 'Evil has gained majority control!',
-    '3 consecutive leader rejections': 'Three consecutive leader rejections caused chaos!',
+  const reasonMap: Record<EndReason, { text: string; icon: string }> = {
+    'Good completed 3 successful missions': { 
+      text: 'The forces of good successfully completed 3 missions!',
+      icon: '🏆'
+    },
+    'Evil sabotaged 3 missions': { 
+      text: 'The forces of evil sabotaged 3 missions!',
+      icon: '💀'
+    },
+    'Seer assassinated': { 
+      text: 'The Assassin successfully identified and eliminated the Seer!',
+      icon: '🗡️'
+    },
+    'Assassin failed to identify the Seer': { 
+      text: 'The Assassin failed to find the Seer!',
+      icon: '👁️'
+    },
+    'All evil players eliminated': { 
+      text: 'All evil players have been eliminated!',
+      icon: '⚔️'
+    },
+    'Evil has majority control': { 
+      text: 'Evil has gained majority control!',
+      icon: '👑'
+    },
+    '3 consecutive leader rejections': { 
+      text: 'Three consecutive leader rejections caused chaos!',
+      icon: '🔥'
+    },
   };
   
-  return reasonMap[reason] || reason;
+  return reasonMap[reason] || { text: reason, icon: '📜' };
 }
 
 /**
@@ -75,6 +113,14 @@ function sortPlayersByTeam(players: Player[]): Player[] {
   });
 }
 
+/**
+ * Get character icon for a player
+ */
+function getCharacterIcon(character: CharacterName | null): string {
+  if (!character) return '❓';
+  return CHARACTER_ICONS[character]?.icon || '❓';
+}
+
 // =============================================================================
 // Confetti Animation Component (for Good team victory)
 // =============================================================================
@@ -82,23 +128,35 @@ function sortPlayersByTeam(players: Player[]): Player[] {
 interface ConfettiPieceProps {
   index: number;
   color: string;
+  shape: 'square' | 'circle' | 'star';
 }
 
-function ConfettiPiece({ index, color }: ConfettiPieceProps) {
+function ConfettiPiece({ index, color, shape }: ConfettiPieceProps) {
   const left = Math.random() * 100;
-  const delay = Math.random() * 2;
-  const duration = 3 + Math.random() * 2;
+  const delay = Math.random() * 3;
+  const duration = 4 + Math.random() * 3;
   const rotation = Math.random() * 360;
+  const size = 6 + Math.random() * 8;
+  const swayAmount = 20 + Math.random() * 40;
+  
+  const shapeStyles: Record<string, string> = {
+    square: 'rounded-sm',
+    circle: 'rounded-full',
+    star: 'clip-path-star',
+  };
   
   return (
     <div
-      className="absolute w-3 h-3 opacity-80"
+      className={`absolute ${shapeStyles[shape]} opacity-90`}
       style={{
         left: `${left}%`,
-        top: '-20px',
+        top: '-30px',
+        width: `${size}px`,
+        height: `${size}px`,
         backgroundColor: color,
-        animation: `confetti-fall ${duration}s ease-out ${delay}s forwards`,
+        animation: `confetti-fall-${index % 3} ${duration}s ease-out ${delay}s infinite`,
         transform: `rotate(${rotation}deg)`,
+        boxShadow: `0 0 ${size / 2}px ${color}40`,
       }}
       aria-hidden="true"
     />
@@ -106,27 +164,40 @@ function ConfettiPiece({ index, color }: ConfettiPieceProps) {
 }
 
 function ConfettiAnimation() {
-  const colors = ['#3B82F6', '#60A5FA', '#93C5FD', '#10B981', '#34D399'];
+  const colors = ['#3B82F6', '#60A5FA', '#93C5FD', '#10B981', '#34D399', '#FCD34D', '#A78BFA'];
+  const shapes: Array<'square' | 'circle' | 'star'> = ['square', 'circle', 'star'];
   
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-50">
       <style>{`
-        @keyframes confetti-fall {
-          0% {
-            transform: translateY(0) rotate(0deg);
-            opacity: 1;
-          }
-          100% {
-            transform: translateY(100vh) rotate(720deg);
-            opacity: 0;
-          }
+        @keyframes confetti-fall-0 {
+          0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(100vh) translateX(30px) rotate(720deg); opacity: 0; }
+        }
+        @keyframes confetti-fall-1 {
+          0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(100vh) translateX(-30px) rotate(-720deg); opacity: 0; }
+        }
+        @keyframes confetti-fall-2 {
+          0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(100vh) translateX(50px) rotate(540deg); opacity: 0; }
+        }
+        @keyframes pulse-glow {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.6; }
         }
       `}</style>
+      {/* Ambient glow overlay */}
+      <div 
+        className="absolute inset-0 bg-gradient-to-b from-blue-500/10 via-transparent to-transparent"
+        style={{ animation: 'pulse-glow 3s ease-in-out infinite' }}
+      />
       {Array.from({ length: CONFETTI_COUNT }).map((_, i) => (
         <ConfettiPiece
           key={i}
           index={i}
           color={colors[i % colors.length]}
+          shape={shapes[i % shapes.length]}
         />
       ))}
     </div>
@@ -143,20 +214,22 @@ interface DarkParticleProps {
 
 function DarkParticle({ index }: DarkParticleProps) {
   const left = Math.random() * 100;
-  const delay = Math.random() * 1.5;
-  const duration = 2 + Math.random() * 2;
-  const size = 4 + Math.random() * 8;
+  const delay = Math.random() * 2;
+  const duration = 3 + Math.random() * 3;
+  const size = 6 + Math.random() * 12;
+  const drift = (Math.random() - 0.5) * 60;
   
   return (
     <div
-      className="absolute rounded-full bg-red-900/60"
+      className="absolute rounded-full"
       style={{
         left: `${left}%`,
-        bottom: '-20px',
+        bottom: '-30px',
         width: `${size}px`,
         height: `${size}px`,
-        animation: `dark-rise ${duration}s ease-out ${delay}s forwards`,
-        boxShadow: '0 0 10px rgba(185, 28, 28, 0.5)',
+        background: `radial-gradient(circle, rgba(185, 28, 28, 0.8) 0%, rgba(127, 29, 29, 0.4) 50%, transparent 100%)`,
+        animation: `dark-rise-${index % 3} ${duration}s ease-out ${delay}s infinite`,
+        boxShadow: '0 0 20px rgba(185, 28, 28, 0.6), 0 0 40px rgba(127, 29, 29, 0.3)',
       }}
       aria-hidden="true"
     />
@@ -167,17 +240,28 @@ function DarkParticlesAnimation() {
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-50">
       <style>{`
-        @keyframes dark-rise {
-          0% {
-            transform: translateY(0) scale(1);
-            opacity: 0.8;
-          }
-          100% {
-            transform: translateY(-100vh) scale(0.5);
-            opacity: 0;
-          }
+        @keyframes dark-rise-0 {
+          0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.8; }
+          100% { transform: translateY(-100vh) translateX(20px) scale(0.3); opacity: 0; }
+        }
+        @keyframes dark-rise-1 {
+          0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.8; }
+          100% { transform: translateY(-100vh) translateX(-30px) scale(0.4); opacity: 0; }
+        }
+        @keyframes dark-rise-2 {
+          0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.8; }
+          100% { transform: translateY(-100vh) translateX(10px) scale(0.2); opacity: 0; }
+        }
+        @keyframes flicker {
+          0%, 100% { opacity: 0.2; }
+          50% { opacity: 0.4; }
         }
       `}</style>
+      {/* Ominous red overlay */}
+      <div 
+        className="absolute inset-0 bg-gradient-to-t from-red-900/20 via-transparent to-transparent"
+        style={{ animation: 'flicker 2s ease-in-out infinite' }}
+      />
       {Array.from({ length: PARTICLE_COUNT }).map((_, i) => (
         <DarkParticle key={i} index={i} />
       ))}
@@ -200,39 +284,89 @@ function WinnerBanner({ winner, revealed }: WinnerBannerProps) {
   return (
     <div
       className={`
-        transform transition-all duration-700 ease-out
-        ${revealed ? 'scale-100 opacity-100 translate-y-0' : 'scale-50 opacity-0 -translate-y-8'}
+        transform transition-all duration-1000 ease-out
+        ${revealed ? 'scale-100 opacity-100 translate-y-0' : 'scale-50 opacity-0 -translate-y-12'}
       `}
     >
+      {/* Glow effect behind banner */}
       <div
         className={`
-          inline-block px-8 py-4 rounded-2xl mb-2
+          absolute inset-0 blur-3xl opacity-50 -z-10
+          ${isGood ? 'bg-blue-500' : 'bg-red-500'}
+        `}
+        style={{
+          transform: 'scale(1.5)',
+          animation: revealed ? 'pulse-glow 3s ease-in-out infinite' : 'none',
+        }}
+      />
+      
+      {/* Main banner */}
+      <div
+        className={`
+          relative inline-block px-10 py-6 rounded-3xl mb-4
           ${isGood 
-            ? 'bg-gradient-to-r from-blue-600/30 to-cyan-600/30 border-2 border-blue-500' 
-            : 'bg-gradient-to-r from-red-600/30 to-orange-600/30 border-2 border-red-500'}
+            ? 'bg-gradient-to-br from-blue-600/40 via-cyan-600/30 to-blue-700/40 border-2 border-blue-400/60 shadow-[0_0_60px_rgba(59,130,246,0.4)]' 
+            : 'bg-gradient-to-br from-red-600/40 via-orange-600/30 to-red-700/40 border-2 border-red-400/60 shadow-[0_0_60px_rgba(239,68,68,0.4)]'}
         `}
       >
+        {/* Trophy/Crown icon above title */}
+        <div
+          className={`
+            text-5xl mb-2 transform transition-all duration-700 delay-300
+            ${revealed ? 'scale-100 opacity-100 translate-y-0' : 'scale-0 opacity-0 -translate-y-4'}
+          `}
+        >
+          {isGood ? '👑' : '💀'}
+        </div>
+        
         <h1
           className={`
-            text-5xl md:text-6xl font-bold
-            ${isGood ? 'text-blue-400' : 'text-red-400'}
+            text-5xl md:text-7xl font-black tracking-tight
+            ${isGood 
+              ? 'text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-cyan-200 to-blue-300' 
+              : 'text-transparent bg-clip-text bg-gradient-to-r from-red-300 via-orange-200 to-red-300'}
           `}
+          style={{
+            textShadow: isGood 
+              ? '0 0 40px rgba(59, 130, 246, 0.8), 0 0 80px rgba(59, 130, 246, 0.4)' 
+              : '0 0 40px rgba(239, 68, 68, 0.8), 0 0 80px rgba(239, 68, 68, 0.4)',
+          }}
           role="alert"
           aria-live="polite"
         >
-          {isGood ? 'Good Wins!' : 'Evil Wins!'}
+          {isGood ? 'GOOD WINS!' : 'EVIL WINS!'}
         </h1>
+        
+        {/* Subtitle */}
+        <p
+          className={`
+            mt-2 text-lg font-medium tracking-wide
+            ${isGood ? 'text-blue-200/80' : 'text-red-200/80'}
+          `}
+        >
+          {isGood ? 'Justice has prevailed!' : 'Darkness consumes all!'}
+        </p>
       </div>
       
-      {/* Victory icon */}
+      {/* Animated victory icon below */}
       <div
         className={`
-          text-6xl mt-4 transform transition-all duration-500 delay-300
-          ${revealed ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}
+          text-7xl mt-6 transform transition-all duration-700 delay-500
+          ${revealed ? 'scale-100 opacity-100 rotate-0' : 'scale-0 opacity-0 rotate-180'}
         `}
+        style={{
+          animation: revealed ? 'bounce-subtle 2s ease-in-out infinite' : 'none',
+        }}
       >
         {isGood ? '🛡️' : '🗡️'}
       </div>
+      
+      <style>{`
+        @keyframes bounce-subtle {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(-8px) scale(1.05); }
+        }
+      `}</style>
     </div>
   );
 }
@@ -245,16 +379,22 @@ interface EndReasonDisplayProps {
 function EndReasonDisplay({ reason, revealed }: EndReasonDisplayProps) {
   if (!reason) return null;
   
+  const { text, icon } = formatEndReason(reason);
+  
   return (
-    <p
+    <div
       className={`
-        text-lg text-gray-300 max-w-md mx-auto mt-6
-        transform transition-all duration-500
-        ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
+        mt-8 transform transition-all duration-700 delay-200
+        ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}
       `}
     >
-      {formatEndReason(reason)}
-    </p>
+      <div className="inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-stone-800/60 border border-stone-600/40 backdrop-blur-sm">
+        <span className="text-2xl">{icon}</span>
+        <p className="text-lg text-gray-200 font-medium">
+          {text}
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -262,53 +402,95 @@ interface PlayerRoleCardProps {
   player: Player;
   index: number;
   revealed: boolean;
+  isCurrentPlayer?: boolean;
 }
 
-function PlayerRoleCard({ player, index, revealed }: PlayerRoleCardProps) {
+function PlayerRoleCard({ player, index, revealed, isCurrentPlayer = false }: PlayerRoleCardProps) {
   const isGood = player.team === 'good';
   const isEliminated = !player.is_alive;
+  const characterIcon = getCharacterIcon(player.character);
+  const characterInfo = player.character ? CHARACTER_ICONS[player.character] : null;
   
   return (
     <div
       className={`
-        p-4 rounded-xl border-2 transform transition-all duration-500 ease-out
-        ${revealed ? 'scale-100 opacity-100 translate-y-0' : 'scale-90 opacity-0 translate-y-4'}
+        relative p-4 rounded-2xl border-2 transform transition-all duration-600 ease-out
+        ${revealed ? 'scale-100 opacity-100 translate-y-0 translate-x-0' : 'scale-90 opacity-0 translate-y-4 translate-x-2'}
         ${isGood 
-          ? 'bg-blue-900/30 border-blue-600/50' 
-          : 'bg-red-900/30 border-red-600/50'}
-        ${isEliminated ? 'opacity-50' : ''}
+          ? 'bg-gradient-to-br from-blue-900/50 to-blue-950/60 border-blue-500/60 shadow-[0_4px_20px_rgba(59,130,246,0.2)]' 
+          : 'bg-gradient-to-br from-red-900/50 to-red-950/60 border-red-500/60 shadow-[0_4px_20px_rgba(239,68,68,0.2)]'}
+        ${isEliminated ? 'opacity-60 grayscale-[30%]' : ''}
+        ${isCurrentPlayer ? 'ring-2 ring-yellow-400/60 ring-offset-2 ring-offset-stone-900' : ''}
+        hover:scale-[1.02] hover:shadow-lg
       `}
       style={{
-        transitionDelay: revealed ? `${index * 100}ms` : '0ms',
+        transitionDelay: revealed ? `${index * 120}ms` : '0ms',
       }}
     >
-      <div className="flex items-center gap-3">
-        {/* Team indicator */}
+      {/* Current player badge */}
+      {isCurrentPlayer && (
+        <span className="absolute -top-2 -right-2 px-2 py-0.5 text-xs font-bold bg-yellow-500 text-yellow-900 rounded-full">
+          YOU
+        </span>
+      )}
+      
+      <div className="flex items-center gap-4">
+        {/* Character icon with gradient background */}
         <div
           className={`
-            w-10 h-10 rounded-full flex items-center justify-center text-lg
-            ${isGood ? 'bg-blue-600' : 'bg-red-600'}
+            relative w-14 h-14 rounded-xl flex items-center justify-center text-2xl
+            ${isGood 
+              ? 'bg-gradient-to-br from-blue-500 to-blue-700 shadow-[0_2px_12px_rgba(59,130,246,0.4)]' 
+              : 'bg-gradient-to-br from-red-500 to-red-700 shadow-[0_2px_12px_rgba(239,68,68,0.4)]'}
+            ${isEliminated ? 'grayscale' : ''}
           `}
         >
-          {isGood ? '😇' : '😈'}
+          {characterIcon}
+          {isEliminated && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-xl">
+              <span className="text-xl">💀</span>
+            </div>
+          )}
         </div>
         
         {/* Player info */}
         <div className="flex-1 text-left">
-          <p className={`font-semibold ${isEliminated ? 'line-through text-gray-500' : 'text-white'}`}>
+          <p 
+            className={`
+              font-bold text-lg
+              ${isEliminated ? 'line-through text-gray-500' : 'text-white'}
+            `}
+          >
             {player.display_name}
           </p>
-          <p className={`text-sm ${isGood ? 'text-blue-400' : 'text-red-400'}`}>
-            {player.character}
-          </p>
+          <div className="flex items-center gap-2">
+            <p 
+              className={`
+                text-sm font-semibold
+                ${isGood ? 'text-blue-300' : 'text-red-300'}
+              `}
+            >
+              {player.character}
+            </p>
+            {characterInfo && (
+              <span className="text-xs text-gray-400">
+                • {characterInfo.description}
+              </span>
+            )}
+          </div>
         </div>
         
-        {/* Status indicators */}
-        {isEliminated && (
-          <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">
-            Eliminated
-          </span>
-        )}
+        {/* Team badge */}
+        <div
+          className={`
+            px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider
+            ${isGood 
+              ? 'bg-blue-500/30 text-blue-200 border border-blue-400/30' 
+              : 'bg-red-500/30 text-red-200 border border-red-400/30'}
+          `}
+        >
+          {isGood ? 'Good' : 'Evil'}
+        </div>
       </div>
     </div>
   );
@@ -317,9 +499,10 @@ function PlayerRoleCard({ player, index, revealed }: PlayerRoleCardProps) {
 interface RolesRevealProps {
   players: Player[];
   revealed: boolean;
+  currentPlayerId?: string;
 }
 
-function RolesReveal({ players, revealed }: RolesRevealProps) {
+function RolesReveal({ players, revealed, currentPlayerId }: RolesRevealProps) {
   const sortedPlayers = sortPlayersByTeam(players);
   const goodPlayers = sortedPlayers.filter(p => p.team === 'good');
   const evilPlayers = sortedPlayers.filter(p => p.team === 'evil');
@@ -327,21 +510,34 @@ function RolesReveal({ players, revealed }: RolesRevealProps) {
   return (
     <div
       className={`
-        mt-8 transform transition-all duration-500
-        ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
+        mt-10 transform transition-all duration-700
+        ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}
       `}
     >
-      <h3 className="text-xl font-semibold text-gray-300 mb-6">
-        All Roles Revealed
-      </h3>
+      {/* Section header with dramatic styling */}
+      <div className="mb-8">
+        <div className="flex items-center justify-center gap-4 mb-2">
+          <div className="h-px w-16 bg-gradient-to-r from-transparent to-stone-500" />
+          <h3 className="text-2xl font-bold text-white tracking-wide">
+            🎭 Roles Revealed
+          </h3>
+          <div className="h-px w-16 bg-gradient-to-l from-transparent to-stone-500" />
+        </div>
+        <p className="text-sm text-gray-400">The truth is finally known...</p>
+      </div>
       
-      <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-        {/* Good team */}
-        <div>
-          <h4 className="text-blue-400 font-semibold mb-3 flex items-center gap-2">
-            <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
-            Good Team
-          </h4>
+      <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+        {/* Good team section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 mb-4 pb-2 border-b border-blue-500/30">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-lg shadow-lg shadow-blue-500/30">
+              🛡️
+            </div>
+            <h4 className="text-xl font-bold text-blue-300">Forces of Good</h4>
+            <span className="ml-auto px-2 py-0.5 text-xs font-semibold bg-blue-500/20 text-blue-300 rounded-full">
+              {goodPlayers.length} players
+            </span>
+          </div>
           <div className="space-y-3">
             {goodPlayers.map((player, index) => (
               <PlayerRoleCard
@@ -349,17 +545,23 @@ function RolesReveal({ players, revealed }: RolesRevealProps) {
                 player={player}
                 index={index}
                 revealed={revealed}
+                isCurrentPlayer={player.id === currentPlayerId}
               />
             ))}
           </div>
         </div>
         
-        {/* Evil team */}
-        <div>
-          <h4 className="text-red-400 font-semibold mb-3 flex items-center gap-2">
-            <span className="w-3 h-3 bg-red-500 rounded-full"></span>
-            Evil Team
-          </h4>
+        {/* Evil team section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 mb-4 pb-2 border-b border-red-500/30">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center text-lg shadow-lg shadow-red-500/30">
+              🗡️
+            </div>
+            <h4 className="text-xl font-bold text-red-300">Forces of Evil</h4>
+            <span className="ml-auto px-2 py-0.5 text-xs font-semibold bg-red-500/20 text-red-300 rounded-full">
+              {evilPlayers.length} players
+            </span>
+          </div>
           <div className="space-y-3">
             {evilPlayers.map((player, index) => (
               <PlayerRoleCard
@@ -367,6 +569,7 @@ function RolesReveal({ players, revealed }: RolesRevealProps) {
                 player={player}
                 index={index + goodPlayers.length}
                 revealed={revealed}
+                isCurrentPlayer={player.id === currentPlayerId}
               />
             ))}
           </div>
@@ -387,45 +590,57 @@ function ActionButtons({ onPlayAgain, onReturnHome, isLoading, revealed }: Actio
   return (
     <div
       className={`
-        mt-10 flex flex-col sm:flex-row gap-4 justify-center
-        transform transition-all duration-500
-        ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
+        mt-12 flex flex-col sm:flex-row gap-4 justify-center
+        transform transition-all duration-700
+        ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}
       `}
     >
       <button
         onClick={onPlayAgain}
         disabled={isLoading}
         className={`
-          px-8 py-4 rounded-xl font-semibold text-lg transition-all
-          bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500
+          group relative px-10 py-4 rounded-2xl font-bold text-lg transition-all duration-300
+          bg-gradient-to-br from-blue-500 via-cyan-500 to-blue-600 
+          hover:from-blue-400 hover:via-cyan-400 hover:to-blue-500
           disabled:opacity-50 disabled:cursor-not-allowed
-          transform hover:scale-105 active:scale-95
+          transform hover:scale-105 hover:-translate-y-1 active:scale-95
+          shadow-[0_8px_30px_rgba(59,130,246,0.4)]
+          hover:shadow-[0_12px_40px_rgba(59,130,246,0.5)]
         `}
         aria-label="Play again - create a new game"
       >
-        {isLoading ? (
-          <span className="flex items-center gap-2">
-            <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            Creating...
-          </span>
-        ) : (
-          '🎮 Play Again'
-        )}
+        <span className="relative z-10 flex items-center gap-3">
+          {isLoading ? (
+            <>
+              <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Creating...
+            </>
+          ) : (
+            <>
+              <span className="text-xl group-hover:animate-bounce">🎮</span>
+              Play Again
+            </>
+          )}
+        </span>
       </button>
       
       <button
         onClick={onReturnHome}
         className={`
-          px-8 py-4 rounded-xl font-semibold text-lg transition-all
-          bg-stone-700 hover:bg-stone-600
-          transform hover:scale-105 active:scale-95
+          group px-10 py-4 rounded-2xl font-bold text-lg transition-all duration-300
+          bg-stone-700/80 hover:bg-stone-600/90 border border-stone-500/40
+          transform hover:scale-105 hover:-translate-y-1 active:scale-95
+          shadow-lg hover:shadow-xl
         `}
         aria-label="Return to home page"
       >
-        🏠 Return Home
+        <span className="flex items-center gap-3">
+          <span className="text-xl group-hover:scale-110 transition-transform">🏠</span>
+          Return Home
+        </span>
       </button>
     </div>
   );
@@ -439,19 +654,36 @@ interface PersonalResultProps {
 
 function PersonalResult({ currentPlayer, winner, revealed }: PersonalResultProps) {
   const isWinner = currentPlayer.team === winner;
+  const characterIcon = getCharacterIcon(currentPlayer.character);
   
   return (
     <div
       className={`
-        mt-4 text-lg transform transition-all duration-500 delay-200
-        ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
+        mt-6 transform transition-all duration-700 delay-300
+        ${revealed ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-6 scale-95'}
       `}
     >
-      {isWinner ? (
-        <span className="text-green-400">You were on the winning team!</span>
-      ) : (
-        <span className="text-gray-400">Better luck next time!</span>
-      )}
+      <div
+        className={`
+          inline-flex items-center gap-4 px-8 py-4 rounded-2xl border-2
+          ${isWinner 
+            ? 'bg-gradient-to-r from-emerald-900/40 to-green-900/40 border-emerald-400/60 shadow-[0_4px_20px_rgba(16,185,129,0.3)]' 
+            : 'bg-gradient-to-r from-stone-800/60 to-stone-700/60 border-stone-500/40'}
+        `}
+      >
+        <span className="text-3xl">{characterIcon}</span>
+        <div className="text-left">
+          <p className={`text-lg font-bold ${isWinner ? 'text-emerald-300' : 'text-gray-300'}`}>
+            {isWinner ? '🎉 Victory!' : '😔 Defeat'}
+          </p>
+          <p className="text-sm text-gray-400">
+            You played as <span className={currentPlayer.team === 'good' ? 'text-blue-300 font-semibold' : 'text-red-300 font-semibold'}>{currentPlayer.character}</span>
+          </p>
+        </div>
+        {isWinner && (
+          <span className="text-4xl animate-bounce">🏆</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -524,6 +756,24 @@ export function GameOver({
   
   return (
     <div className="relative min-h-screen overflow-hidden">
+      {/* Dramatic background gradient based on winner */}
+      <div 
+        className={`
+          fixed inset-0 -z-20
+          ${isGoodWin 
+            ? 'bg-gradient-to-b from-blue-950 via-stone-900 to-stone-950' 
+            : 'bg-gradient-to-b from-red-950 via-stone-900 to-stone-950'}
+        `}
+      />
+      
+      {/* Radial glow behind main content */}
+      <div 
+        className={`
+          fixed top-1/4 left-1/2 -translate-x-1/2 -z-10 w-[800px] h-[600px] rounded-full blur-3xl opacity-20
+          ${isGoodWin ? 'bg-blue-500' : 'bg-red-500'}
+        `}
+      />
+      
       {/* Background animation based on winner */}
       {isGoodWin ? <ConfettiAnimation /> : <DarkParticlesAnimation />}
       
@@ -546,7 +796,11 @@ export function GameOver({
           )}
           
           {/* Player roles reveal */}
-          <RolesReveal players={players} revealed={rolesRevealed} />
+          <RolesReveal 
+            players={players} 
+            revealed={rolesRevealed} 
+            currentPlayerId={currentPlayer?.id}
+          />
           
           {/* Action buttons */}
           <ActionButtons
@@ -559,17 +813,42 @@ export function GameOver({
           {/* Game stats footer */}
           <div
             className={`
-              mt-12 pt-6 border-t border-stone-700 text-sm text-gray-500
-              transform transition-all duration-500
-              ${buttonsRevealed ? 'opacity-100' : 'opacity-0'}
+              mt-16 pt-8 border-t border-stone-700/50
+              transform transition-all duration-700
+              ${buttonsRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
             `}
           >
-            <p>
-              Game completed after {game.current_round} round{game.current_round !== 1 ? 's' : ''}
-            </p>
-            <p className="mt-1">
-              Final Score: Good {game.good_victories} - {game.evil_victories} Evil
-            </p>
+            <div className="inline-flex items-center gap-6 px-8 py-4 rounded-2xl bg-stone-800/40 border border-stone-700/40">
+              {/* Rounds played */}
+              <div className="text-center">
+                <p className="text-2xl font-bold text-white">{game.current_round}</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider">Round{game.current_round !== 1 ? 's' : ''}</p>
+              </div>
+              
+              <div className="w-px h-10 bg-stone-600/50" />
+              
+              {/* Good victories */}
+              <div className="text-center">
+                <p className="text-2xl font-bold text-blue-400">{game.good_victories}</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider">Good Wins</p>
+              </div>
+              
+              <div className="text-gray-500 font-bold">vs</div>
+              
+              {/* Evil victories */}
+              <div className="text-center">
+                <p className="text-2xl font-bold text-red-400">{game.evil_victories}</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider">Evil Wins</p>
+              </div>
+              
+              <div className="w-px h-10 bg-stone-600/50" />
+              
+              {/* Players */}
+              <div className="text-center">
+                <p className="text-2xl font-bold text-white">{players.length}</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider">Players</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
