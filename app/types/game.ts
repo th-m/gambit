@@ -560,3 +560,108 @@ export const GAME_EVENT_TYPES: readonly GameEventType[] = [
   'good_wins',
   'evil_wins',
 ] as const;
+
+/**
+ * All valid leader vote types.
+ */
+export const LEADER_VOTES: readonly LeaderVote[] = ['yes', 'no'] as const;
+
+/**
+ * All valid mission vote types.
+ */
+export const MISSION_VOTES: readonly MissionVote[] = ['pass', 'fail'] as const;
+
+/**
+ * All valid action types.
+ */
+export const ACTION_TYPES: readonly ActionType[] = [
+  'vote_yes',
+  'vote_no',
+  'vote_pass',
+  'vote_fail',
+  'assassinate',
+  'rig_vote',
+  'plant_beeper',
+  'protect',
+  'sabotage',
+  'select_team',
+  'start_game',
+] as const;
+
+// =============================================================================
+// Type Guards
+// =============================================================================
+
+/**
+ * Type guard for GamePhase validation.
+ * Returns true if the value is a valid GamePhase.
+ */
+export function isGamePhase(value: unknown): value is GamePhase {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  return (GAME_PHASES as readonly string[]).includes(value);
+}
+
+/**
+ * Type guard for LeaderVote validation.
+ * Returns true if the value is a valid leader vote ('yes' or 'no').
+ */
+export function isLeaderVote(value: unknown): value is LeaderVote {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  return (LEADER_VOTES as readonly string[]).includes(value);
+}
+
+/**
+ * Type guard for MissionVote validation.
+ * Returns true if the value is a valid mission vote ('pass' or 'fail').
+ */
+export function isMissionVote(value: unknown): value is MissionVote {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  return (MISSION_VOTES as readonly string[]).includes(value);
+}
+
+/**
+ * Type guard for ActionType validation.
+ * Returns true if the value is a valid ActionType.
+ */
+export function isActionType(value: unknown): value is ActionType {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  return (ACTION_TYPES as readonly string[]).includes(value);
+}
+
+/**
+ * Type guard for ActionId validation.
+ * Returns true if the value is a valid ActionId (character special ability).
+ */
+export function isActionId(value: unknown): value is ActionId {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  return (ACTION_IDS as readonly string[]).includes(value);
+}
+
+/**
+ * Type guard for Team validation.
+ * Returns true if the value is 'good' or 'evil'.
+ */
+export function isTeam(value: unknown): value is Team {
+  return value === 'good' || value === 'evil';
+}
+
+/**
+ * Type guard for GameStatus validation.
+ * Returns true if the value is a valid GameStatus.
+ */
+export function isGameStatus(value: unknown): value is GameStatus {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  return (GAME_STATUSES as readonly string[]).includes(value);
+}
