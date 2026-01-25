@@ -411,3 +411,16 @@
   - GameService.addPlayer handles duplicate joins gracefully by returning existing player
   - Map error messages to status codes: 404 for not found, 400 for invalid state (full/started), 401 for unauth
   - Always validate gameId param exists before using it to avoid runtime errors
+
+---
+## 2026-01-25 - api-games-start
+- **What was implemented**: POST /api/games/:gameId/start endpoint for host to start a game
+- **Files changed**: 
+  - `app/routes/api.games.$gameId.start.tsx` (created)
+- **Learnings:**
+  - StateValidator.validateGameStart handles both host check and game state validation in one call
+  - Map error messages to status codes: 403 for non-host, 400 for invalid player count, 404 for not found
+  - Character assignment via `assignCharacters(players)` returns both playerUpdates array and crownIndex
+  - Apply player updates in a loop before updating game state to ensure atomicity
+  - Game state update sets: status='playing', phase='voting_for_leader', current_round=1, crown_index from assignment
+  - Response includes updated game state so client can immediately reflect changes
