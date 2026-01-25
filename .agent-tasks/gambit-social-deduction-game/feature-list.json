@@ -979,7 +979,7 @@
         "Test ActionPanel filters by phase",
         "Test CharacterInfoPanel applies effects"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "ui-lobby-design",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 86,
-    "completed_features": 63,
+    "completed_features": 64,
     "categories": {
       "functional": 68,
       "visual": 9,
