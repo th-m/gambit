@@ -11,6 +11,7 @@
  */
 
 import { useState, useCallback } from 'react';
+import { useKeyboardNavigation, useEscapeKey, FOCUS_RING_AMBER } from '~/hooks/useKeyboardNavigation';
 import type {
   Player,
   GameContext,
@@ -215,6 +216,11 @@ interface PlayerTargetCardProps {
   isDisabled: boolean;
   selectionOrder?: number;
   onClick: () => void;
+  // Keyboard navigation props
+  tabIndex?: number;
+  'data-focused'?: boolean;
+  onFocus?: () => void;
+  itemRef?: (el: HTMLElement | null) => void;
 }
 
 function PlayerTargetCard({
@@ -224,13 +230,18 @@ function PlayerTargetCard({
   isDisabled,
   selectionOrder,
   onClick,
+  tabIndex,
+  'data-focused': dataFocused,
+  onFocus: onFocusNav,
+  itemRef,
 }: PlayerTargetCardProps) {
   const color = getAvatarColor(player.id);
   const initials = getInitials(player.display_name);
 
-  // Build card classes
+  // Build card classes with focus-visible ring for keyboard navigation
   let cardClasses = `
     relative p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-800
   `;
 
   if (isSelected) {
@@ -249,6 +260,10 @@ function PlayerTargetCard({
       aria-pressed={isSelected}
       aria-label={`${player.display_name}${isSelected ? ' - Selected' : ''}${isCurrentPlayer ? ' (you)' : ''}`}
       className={cardClasses}
+      tabIndex={tabIndex}
+      data-focused={dataFocused}
+      onFocus={onFocusNav}
+      ref={itemRef}
     >
       {/* Selection indicator badge */}
       {isSelected && (
@@ -381,6 +396,27 @@ export function TargetSelector({
   const canConfirm = validation.isValid;
   const showSelectionOrder = action.maxTargets > 1;
 
+  // Escape key closes the selector
+  useEscapeKey(onCancel, true);
+
+  // Handle keyboard selection
+  const handleKeyboardSelect = useCallback((index: number) => {
+    const player = eligibleTargets[index];
+    if (player) {
+      handleToggleTarget(player.id);
+    }
+  }, [eligibleTargets, handleToggleTarget]);
+
+  // Keyboard navigation for the grid
+  const { containerProps, getItemProps } = useKeyboardNavigation({
+    columns: 3, // sm:grid-cols-3
+    itemCount: eligibleTargets.length,
+    onSelect: handleKeyboardSelect,
+    onEscape: onCancel,
+    enabled: true,
+    wrapAround: true,
+  });
+
   return (
     <div className="space-y-4 bg-stone-800/50 rounded-xl p-4 border border-stone-700">
       {/* Header */}
@@ -405,18 +441,22 @@ export function TargetSelector({
         <p className="text-xs text-gray-400">{action.description}</p>
       </div>
 
-      {/* Player Grid */}
+      {/* Player Grid with keyboard navigation */}
       <div
         className="grid grid-cols-2 sm:grid-cols-3 gap-2"
-        role="group"
-        aria-label="Select targets"
+        {...containerProps}
       >
-        {eligibleTargets.map((player) => {
+        {/* Screen reader instruction */}
+        <p className="sr-only">
+          Use arrow keys to navigate, Enter or Space to select, Escape to cancel
+        </p>
+        {eligibleTargets.map((player, index) => {
           const isSelected = selectedTargets.includes(player.id);
           const isCurrentPlayer = player.id === currentPlayerId;
           const atMaxAndNotSelected =
             selectedTargets.length >= action.maxTargets && !isSelected;
           const selectionIndex = selectedTargets.indexOf(player.id);
+          const itemProps = getItemProps(index);
 
           return (
             <PlayerTargetCard
@@ -427,6 +467,10 @@ export function TargetSelector({
               isDisabled={atMaxAndNotSelected}
               selectionOrder={showSelectionOrder && selectionIndex >= 0 ? selectionIndex : undefined}
               onClick={() => handleToggleTarget(player.id)}
+              tabIndex={itemProps.tabIndex}
+              data-focused={itemProps['data-focused']}
+              onFocus={itemProps.onFocus}
+              itemRef={itemProps.ref}
             />
           );
         })}
@@ -451,7 +495,7 @@ export function TargetSelector({
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 py-2.5 px-4 rounded-xl bg-stone-700 text-gray-300 hover:bg-stone-600 transition-all duration-200 text-sm font-medium flex items-center justify-center gap-2 border border-stone-600 hover:border-stone-500"
+          className="flex-1 py-2.5 px-4 rounded-xl bg-stone-700 text-gray-300 hover:bg-stone-600 transition-all duration-200 text-sm font-medium flex items-center justify-center gap-2 border border-stone-600 hover:border-stone-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-800"
         >
           <XIcon className="h-4 w-4" />
           Cancel
@@ -461,7 +505,7 @@ export function TargetSelector({
           onClick={handleConfirm}
           disabled={!canConfirm}
           aria-disabled={!canConfirm}
-          className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
+          className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-800 ${
             canConfirm
               ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-white hover:from-amber-500 hover:to-amber-400 shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 active:scale-[0.98]'
               : 'bg-stone-700 text-gray-500 cursor-not-allowed border border-stone-600'

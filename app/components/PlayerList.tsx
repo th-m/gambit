@@ -7,9 +7,13 @@
  * - Eliminated players visually distinct
  * - Current leader marked with crown
  * - Team members highlighted during mission
+ * - Keyboard navigation with arrow keys
+ * - Visible focus indicators for accessibility
  */
 
+import { useCallback, useRef } from 'react';
 import type { Player } from '~/types/game';
+import { useKeyboardNavigation, FOCUS_RING_CLASSES } from '~/hooks/useKeyboardNavigation';
 
 // =============================================================================
 // Types
@@ -214,6 +218,11 @@ interface PlayerCardProps {
   canBeSelected: boolean;
   atMaxSelections: boolean;
   onSelect?: () => void;
+  // Keyboard navigation props
+  tabIndex?: number;
+  'data-focused'?: boolean;
+  onFocus?: () => void;
+  ref?: (el: HTMLElement | null) => void;
 }
 
 function PlayerCard({
@@ -227,6 +236,10 @@ function PlayerCard({
   canBeSelected,
   atMaxSelections,
   onSelect,
+  tabIndex,
+  'data-focused': dataFocused,
+  onFocus: onFocusNav,
+  ref: refCallback,
 }: PlayerCardProps) {
   const isDisabled = selectable && (!canBeSelected || (atMaxSelections && !isSelected));
 
@@ -244,8 +257,10 @@ function PlayerCard({
   };
 
   // Determine card styling based on state
+  // Include focus-visible ring for keyboard navigation accessibility
   let cardClasses = `
     relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900
   `;
 
   if (isEliminated) {
@@ -275,6 +290,10 @@ function PlayerCard({
         disabled: isDisabled,
         'aria-pressed': isSelected,
         'aria-label': `${player.display_name}${isSelected ? ' (selected)' : ''}${isLeader ? ' (leader)' : ''}${isEliminated ? ' (eliminated)' : ''}`,
+        tabIndex: tabIndex ?? 0,
+        'data-focused': dataFocused,
+        onFocus: onFocusNav,
+        ref: refCallback,
       }
     : {};
 
@@ -350,6 +369,11 @@ interface PlayerItemProps {
   atMaxSelections: boolean;
   onSelect?: () => void;
   compact: boolean;
+  // Keyboard navigation props
+  tabIndex?: number;
+  'data-focused'?: boolean;
+  onFocus?: () => void;
+  ref?: (el: HTMLElement | null) => void;
 }
 
 function PlayerItem({
@@ -364,11 +388,16 @@ function PlayerItem({
   atMaxSelections,
   onSelect,
   compact,
+  tabIndex,
+  'data-focused': dataFocused,
+  onFocus: onFocusNav,
+  ref: refCallback,
 }: PlayerItemProps) {
   const isDisabled = selectable && (!canBeSelected || (atMaxSelections && !isSelected));
 
   // Build container classes
-  let containerClasses = 'flex items-center gap-3 p-2 rounded-lg transition-all duration-200';
+  // Include focus-visible ring for keyboard navigation accessibility
+  let containerClasses = 'flex items-center gap-3 p-2 rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900';
 
   if (isEliminated) {
     containerClasses += ' bg-stone-900/30 opacity-50';
@@ -408,6 +437,10 @@ function PlayerItem({
         disabled: isDisabled,
         'aria-pressed': isSelected,
         'aria-label': `${player.display_name}${isSelected ? ' (selected)' : ''}${isLeader ? ' (leader)' : ''}`,
+        tabIndex: tabIndex ?? 0,
+        'data-focused': dataFocused,
+        onFocus: onFocusNav,
+        ref: refCallback,
       }
     : {};
 
@@ -515,17 +548,44 @@ export function PlayerList({
   // Check if at max selections
   const atMaxSelections = maxSelections > 0 && selectedIds.length >= maxSelections;
 
-  const handleSelectPlayer = (playerId: string, currentlySelected: boolean) => {
+  const handleSelectPlayer = useCallback((playerId: string, currentlySelected: boolean) => {
     if (onSelectPlayer) {
       onSelectPlayer(playerId, !currentlySelected);
     }
-  };
+  }, [onSelectPlayer]);
+
+  // Handle keyboard selection
+  const handleKeyboardSelect = useCallback((index: number) => {
+    const player = sortedPlayers[index];
+    if (!player) return;
+    
+    const canBeSelected = canSelect ? canSelect(player) : player.is_alive;
+    const isSelected = selectedIds.includes(player.id);
+    
+    if (selectable && canBeSelected && (!atMaxSelections || isSelected)) {
+      handleSelectPlayer(player.id, isSelected);
+    }
+  }, [sortedPlayers, canSelect, selectable, selectedIds, atMaxSelections, handleSelectPlayer]);
+
+  // Keyboard navigation for grid layout
+  const columns = gridLayout ? 3 : 1; // sm:grid-cols-3, but on mobile it's 2, assume 3 for desktop
+  const { containerProps, getItemProps } = useKeyboardNavigation({
+    columns,
+    itemCount: sortedPlayers.length,
+    onSelect: handleKeyboardSelect,
+    enabled: selectable,
+    wrapAround: true,
+  });
+
+  // Refs for each item to support focus management
+  const itemRefs = useRef<Map<number, HTMLElement>>(new Map());
 
   return (
     <div
       className="bg-stone-800 rounded-xl p-4 border border-stone-700"
-      role={selectable ? 'group' : undefined}
+      role={selectable ? 'listbox' : 'list'}
       aria-label={selectable ? 'Select players' : 'Player list'}
+      aria-multiselectable={selectable && maxSelections > 1 ? true : undefined}
     >
       {!compact && (
         <h3 className="font-semibold mb-3 text-gray-300">
@@ -548,16 +608,27 @@ export function PlayerList({
         </div>
       )}
 
+      {/* Keyboard navigation hint for selectable mode */}
+      {selectable && (
+        <p className="sr-only">
+          Use arrow keys to navigate, Enter or Space to select, Escape to cancel
+        </p>
+      )}
+
       {/* Grid or List Layout */}
       {gridLayout ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {sortedPlayers.map((player) => {
+        <div 
+          className="grid grid-cols-2 sm:grid-cols-3 gap-3"
+          {...(selectable ? containerProps : {})}
+        >
+          {sortedPlayers.map((player, index) => {
             const isCurrentPlayer = player.id === currentPlayerId;
             const isLeader = player.id === leaderId;
             const isOnTeam = selectedTeam?.includes(player.id) ?? false;
             const isEliminated = !player.is_alive;
             const isSelected = selectedIds.includes(player.id);
             const canBeSelected = canSelect ? canSelect(player) : player.is_alive;
+            const itemProps = selectable ? getItemProps(index) : {};
 
             return (
               <PlayerCard
@@ -572,19 +643,24 @@ export function PlayerList({
                 canBeSelected={canBeSelected}
                 atMaxSelections={atMaxSelections}
                 onSelect={() => handleSelectPlayer(player.id, isSelected)}
+                {...itemProps}
               />
             );
           })}
         </div>
       ) : (
-        <div className="space-y-2">
-          {sortedPlayers.map((player) => {
+        <div 
+          className="space-y-2"
+          {...(selectable ? containerProps : {})}
+        >
+          {sortedPlayers.map((player, index) => {
             const isCurrentPlayer = player.id === currentPlayerId;
             const isLeader = player.id === leaderId;
             const isOnTeam = selectedTeam?.includes(player.id) ?? false;
             const isEliminated = !player.is_alive;
             const isSelected = selectedIds.includes(player.id);
             const canBeSelected = canSelect ? canSelect(player) : player.is_alive;
+            const itemProps = selectable ? getItemProps(index) : {};
 
             return (
               <PlayerItem
@@ -600,6 +676,7 @@ export function PlayerList({
                 atMaxSelections={atMaxSelections}
                 onSelect={() => handleSelectPlayer(player.id, isSelected)}
                 compact={compact}
+                {...itemProps}
               />
             );
           })}

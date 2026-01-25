@@ -554,9 +554,10 @@ describe('PlayerList accessibility', () => {
       />
     );
 
-    const group = container.querySelector('[role="group"]');
-    expect(group).toBeTruthy();
-    expect(group?.getAttribute('aria-label')).toBe('Select players');
+    // Changed to listbox for better accessibility semantics
+    const listbox = container.querySelector('[role="listbox"]');
+    expect(listbox).toBeTruthy();
+    expect(listbox?.getAttribute('aria-label')).toBe('Select players');
   });
 
   it('has aria-label on player buttons', () => {

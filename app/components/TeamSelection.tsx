@@ -15,6 +15,7 @@
 import { useState, useCallback, useRef } from 'react';
 import type { Game, Player } from '~/types/game';
 import { getMissionSize } from '~/services/StateValidator';
+import { useKeyboardNavigation, FOCUS_RING_CLASSES } from '~/hooks/useKeyboardNavigation';
 
 // =============================================================================
 // Types
@@ -150,6 +151,11 @@ interface PlayerCardProps {
   canSelect: boolean;
   isAtLimit: boolean;
   onToggle: () => void;
+  // Keyboard navigation props
+  tabIndex?: number;
+  'data-focused'?: boolean;
+  onFocus?: () => void;
+  itemRef?: (el: HTMLElement | null) => void;
 }
 
 function PlayerCard({
@@ -161,14 +167,19 @@ function PlayerCard({
   canSelect,
   isAtLimit,
   onToggle,
+  tabIndex,
+  'data-focused': dataFocused,
+  onFocus: onFocusNav,
+  itemRef,
 }: PlayerCardProps) {
   const color = getAvatarColor(player.id);
   const initials = getInitials(player.display_name);
   const canBeSelected = canSelect && (isSelected || !isAtLimit) && !isEliminated;
 
-  // Determine card styling
+  // Determine card styling with focus-visible ring for keyboard navigation
   let cardClasses = `
     relative p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900
   `;
 
   if (isEliminated) {
@@ -189,6 +200,10 @@ function PlayerCard({
       aria-pressed={isSelected}
       aria-label={`${player.display_name}${isLeader ? ' (Leader)' : ''}${isSelected ? ' - Selected' : ''}${isEliminated ? ' - Eliminated' : ''}`}
       className={cardClasses}
+      tabIndex={tabIndex}
+      data-focused={dataFocused}
+      onFocus={onFocusNav}
+      ref={itemRef}
     >
       {/* Selection check badge */}
       {isSelected && (
@@ -405,6 +420,23 @@ export function TeamSelection({ game, players, currentPlayer, onSelectTeam }: Te
     [isLeader, requiredSize]
   );
 
+  // Handle keyboard selection
+  const handleKeyboardSelect = useCallback((index: number) => {
+    const player = sortedPlayers[index];
+    if (player && player.is_alive) {
+      handleToggle(player.id);
+    }
+  }, [sortedPlayers, handleToggle]);
+
+  // Keyboard navigation for the grid
+  const { containerProps, getItemProps } = useKeyboardNavigation({
+    columns: 3, // sm:grid-cols-3
+    itemCount: sortedPlayers.length,
+    onSelect: handleKeyboardSelect,
+    enabled: isLeader && !isSubmitting,
+    wrapAround: true,
+  });
+
   // Submit team selection
   const handleSubmit = useCallback(async () => {
     const now = Date.now();
@@ -473,17 +505,21 @@ export function TeamSelection({ game, players, currentPlayer, onSelectTeam }: Te
       {/* Selection progress */}
       <SelectionProgress selected={selectedIds.length} required={requiredSize} />
 
-      {/* Player grid */}
+      {/* Player grid with keyboard navigation */}
       <div
         className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6"
-        role="group"
-        aria-label="Player selection grid"
+        {...containerProps}
       >
-        {sortedPlayers.map((player) => {
+        {/* Screen reader instruction */}
+        <p className="sr-only">
+          Use arrow keys to navigate, Enter or Space to select, Escape to cancel
+        </p>
+        {sortedPlayers.map((player, index) => {
           const isSelected = selectedIds.includes(player.id);
           const isPlayerLeader = player.id === leader?.id;
           const isCurrentPlayer = player.id === currentPlayer.id;
           const isEliminated = !player.is_alive;
+          const itemProps = getItemProps(index);
 
           return (
             <PlayerCard
@@ -496,6 +532,10 @@ export function TeamSelection({ game, players, currentPlayer, onSelectTeam }: Te
               canSelect={!isSubmitting}
               isAtLimit={isAtLimit}
               onToggle={() => handleToggle(player.id)}
+              tabIndex={itemProps.tabIndex}
+              data-focused={itemProps['data-focused']}
+              onFocus={itemProps.onFocus}
+              itemRef={itemProps.ref}
             />
           );
         })}
@@ -517,6 +557,7 @@ export function TeamSelection({ game, players, currentPlayer, onSelectTeam }: Te
           aria-busy={isSubmitting}
           className={`
             px-8 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900
             ${
               canSubmit
                 ? 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 active:scale-[0.98]'

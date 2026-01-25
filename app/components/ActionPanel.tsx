@@ -12,10 +12,11 @@
  * - Handles execution errors
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { actionRegistry, getUsedActionIds } from '~/registry/ActionRegistry';
 import { characterRegistry } from '~/registry/CharacterRegistry';
 import { TargetSelector } from '~/components/TargetSelector';
+import { useEscapeKey, FOCUS_RING_CLASSES } from '~/hooks/useKeyboardNavigation';
 import type {
   Player,
   Game,
@@ -67,7 +68,7 @@ function ActionButton({ action, onClick, disabled }: ActionButtonProps) {
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`w-full text-left p-3 rounded-lg transition-colors ${
+      className={`w-full text-left p-3 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900 ${
         disabled
           ? 'bg-stone-800 text-gray-600 cursor-not-allowed'
           : 'bg-stone-700 hover:bg-stone-600 text-gray-200'
@@ -114,7 +115,7 @@ function ResultDisplay({ action, result, onDismiss }: ResultDisplayProps) {
       <button
         type="button"
         onClick={onDismiss}
-        className="mt-3 w-full py-2 px-3 rounded-lg bg-stone-700 text-gray-300 hover:bg-stone-600 transition-colors text-sm"
+        className="mt-3 w-full py-2 px-3 rounded-lg bg-stone-700 text-gray-300 hover:bg-stone-600 transition-colors text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900"
       >
         {result.gameEnded ? 'View Results' : 'Continue'}
       </button>
@@ -162,6 +163,13 @@ export function ActionPanel({
   const [state, setState] = useState<PanelState>({ type: 'idle' });
   const lastClickRef = useRef<number>(0);
   const CLICK_DEBOUNCE_MS = 500;
+
+  // Escape key closes target selector
+  useEscapeKey(() => {
+    if (state.type === 'selecting') {
+      setState({ type: 'idle' });
+    }
+  }, state.type === 'selecting');
 
   // Get character definition to find available actions
   const characterDef = player.character ? characterRegistry.get(player.character) : null;
