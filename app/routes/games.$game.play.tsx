@@ -15,6 +15,7 @@ import { GameFlowProvider, useGameFlow } from '~/contexts/GameFlowContext';
 import { GameBoard } from '~/components/GameBoard';
 import { LeaderVoting } from '~/components/LeaderVoting';
 import { TeamSelection } from '~/components/TeamSelection';
+import { MissionVoting } from '~/components/MissionVoting';
 import type { Game, Player, GamePhase } from '~/types/game';
 
 // =============================================================================
@@ -120,36 +121,13 @@ function MissionVotingPhase() {
 
   if (!game || !currentPlayer) return null;
 
-  const isOnTeam = game.selected_team?.includes(currentPlayer.id);
-  const isEvil = currentPlayer.team === 'evil';
-
   return (
-    <div className="text-center">
-      <h2 className="text-2xl font-bold mb-2">Mission Vote</h2>
-      {isOnTeam ? (
-        <>
-          <p className="text-gray-400 mb-6">You are on the mission team. Cast your vote.</p>
-          <div className="flex gap-4 justify-center">
-            <button
-              onClick={() => submitMissionVote('pass')}
-              className="px-8 py-3 bg-green-600 hover:bg-green-500 rounded-xl font-semibold transition-colors"
-            >
-              Pass
-            </button>
-            {isEvil && (
-              <button
-                onClick={() => submitMissionVote('fail')}
-                className="px-8 py-3 bg-red-600 hover:bg-red-500 rounded-xl font-semibold transition-colors"
-              >
-                Fail
-              </button>
-            )}
-          </div>
-        </>
-      ) : (
-        <p className="text-gray-400">Waiting for team members to vote...</p>
-      )}
-    </div>
+    <MissionVoting
+      game={game}
+      players={players}
+      currentPlayer={currentPlayer}
+      onVote={submitMissionVote}
+    />
   );
 }
 
