@@ -1276,7 +1276,7 @@
         "Tracker beeper causes vibration on vote reveal",
         "Saboteur adds extra fail vote"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "e2e-player-reconnect",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 86,
-    "completed_features": 77,
+    "completed_features": 78,
     "categories": {
       "functional": 68,
       "visual": 9,

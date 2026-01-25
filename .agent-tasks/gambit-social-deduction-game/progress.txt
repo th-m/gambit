@@ -1260,3 +1260,18 @@
   - Tie votes (equal yes/no) count as rejection - `yesVotes > noVotes` must be strictly greater for approval
   - End reason for rejection-based evil victory is "3 consecutive leader rejections" (from VoteProcessor.handleThreeRejections)
   - Crown rotation happens regardless of whether the 3rd rejection triggers auto-fail
+
+---
+## 2026-01-25 - e2e-special-actions
+- **What was implemented**: End-to-end tests for all character special action effects
+- **Files changed**: 
+  - `app/e2e/special-actions.test.ts` (created - 15 tests)
+- **Learnings:**
+  - E2E tests for special actions follow same patterns as other E2E tests: fresh service instances, helper functions, character assignment
+  - Protection blocking during assassination phase doesn't end game - `gameEnded: false` indicates action succeeded but game continues
+  - `triggerBeeperVibration` is called internally by VoteProcessor during `processMissionResult` (line 508) BEFORE round advances
+  - After mission completes and round advances, `cleanupRound` removes expired statuses - test beeper status BEFORE mission completion
+  - Use `vi.spyOn()` to verify internal method calls and capture return values during mission processing
+  - Sabotage's `extra_fail` counts toward round 4's 2-fail threshold (7+ players) - confirm with specific test scenario
+  - Combined action tests verify multiple special abilities can be used in same game without interference
+  - Statuses expire based on `expires_at_round` - beeper/protect set to current round, expire after round ends
