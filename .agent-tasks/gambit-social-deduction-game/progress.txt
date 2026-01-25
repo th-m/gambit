@@ -1275,3 +1275,39 @@
   - Sabotage's `extra_fail` counts toward round 4's 2-fail threshold (7+ players) - confirm with specific test scenario
   - Combined action tests verify multiple special abilities can be used in same game without interference
   - Statuses expire based on `expires_at_round` - beeper/protect set to current round, expire after round ends
+
+---
+## 2026-01-25 - perf-bundle-size
+- **What was implemented**: Bundle size optimizations with code splitting and loading indicators
+- **Files changed**: 
+  - `vite.config.ts` (updated - manual chunk configuration)
+  - `app/components/RouteLoadingIndicator.tsx` (created - loading skeletons and spinners)
+  - `app/routes/games.$game.tsx` (updated - lazy loading for Lobby)
+  - `app/routes/games.$game.play.tsx` (updated - lazy loading for game components)
+  - `app/api.routes.integration.test.ts` (moved from routes folder)
+- **Learnings:**
+  - Vite's `manualChunks` function in rollupOptions allows custom chunk grouping based on module ID patterns
+  - Chunk groups: vendor-react, vendor-supabase, vendor-ui, vendor-animation, game-board, game-phases, game-engine, hooks
+  - React.lazy() with named exports requires wrapper: `lazy(() => import('...').then(m => ({ default: m.ExportName })))`
+  - Test files in routes folder get picked up as routes by React Router - move them outside routes folder
+  - Suspense fallbacks should use skeleton loaders that match the layout of actual content
+  - netlify.toml already has immutable caching for `/assets/*` - no additional cache config needed
+  - Build output shows chunk sizes: game-board (77KB), game-phases (47KB), entry.client (318KB - includes React)
+  - Circular chunk warnings can occur when hooks depend on components that depend on hooks - adjust chunk patterns
+  - Route-specific loading skeletons (GameLoadingSkeleton, LobbyLoadingSkeleton) improve perceived performance
+
+---
+## 2026-01-25 - e2e-player-reconnect
+- **What was implemented**: End-to-end tests for player disconnect/reconnect scenarios
+- **Files changed**: 
+  - `app/e2e/player-reconnect.test.ts` (created - 11 tests)
+- **Learnings:**
+  - Reconnection tests combine both hook tests (using renderHook, mock channels) and service tests (using GameService, VoteProcessor)
+  - Browser refresh is simulated by unmount/remount pattern - verify state restoration after re-render
+  - Connection status may go to 'reconnecting' directly from 'connected' when channel error occurs (not always 'disconnected' first)
+  - VoteProcessor prevents duplicate votes with case-sensitive error message "Already voted" - use toLowerCase() for flexible assertions
+  - Subscription cleanup is verified by checking removeChannel call count (3 channels: games, players, actions)
+  - State changes during disconnect are caught on reconnect via fresh data fetch - test by changing mock return between unmount/remount
+  - Rapid reconnection test uses loop with unmount/remount cycles to verify stability under stress
+  - isMountedRef pattern prevents "state update on unmounted component" errors - test by unmounting before async fetch completes
+  - Service-level tests verify backend state persists through frontend reconnects (GameService, VoteProcessor maintain state)
