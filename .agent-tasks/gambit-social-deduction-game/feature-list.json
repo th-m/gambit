@@ -303,7 +303,7 @@
         "Test cannot join game already in progress",
         "Test cannot join full game (10 players)"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "action-assassinate",
@@ -319,7 +319,7 @@
         "If target is not Seer during assassination phase, good wins",
         "Blocked by protect status"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "action-rig-vote",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 18,
+    "completed_features": 20,
     "categories": {
       "functional": 68,
       "visual": 9,

@@ -259,3 +259,30 @@
   - validateJoinGame returns valid:true even when player already in game (graceful handling pattern)
   - Export constants (MIN_PLAYERS, MAX_PLAYERS) for use in other services and tests
   - validateLeaveGame added as additional validation not in original spec (follows same pattern)
+
+---
+## 2026-01-25 - test-service-state-validator
+- **What was implemented**: Comprehensive unit tests for StateValidator service (47 tests)
+- **Files changed**: 
+  - `app/services/StateValidator.test.ts` (created - 47 unit tests)
+- **Learnings:**
+  - `getMissionSize` helper is tested exhaustively for all player counts (5-10) and rounds (1-5)
+  - When testing eliminated player validation, account for the fact that eliminating players changes the alive count which affects team size requirements - use larger initial player count (6) to maintain valid team sizes after elimination
+  - Leader rotation is based on crown_index % alivePlayers.length, using sorted alive players by seat_order
+  - Test both valid and invalid crown_index values including wraparound scenarios (crown_index > player count)
+  - `validateJoinGame` returns valid: true for existing players (graceful duplicate handling)
+  - StateValidator tests don't need complex helper factories - `setupGameWithPlayers` handles game + player creation with configurable status/phase/crownIndex
+
+---
+## 2026-01-25 - action-assassinate
+- **What was implemented**: Assassinate action for the Assassin character
+- **Files changed**: 
+  - `app/actions/assassinate.ts` (created - action definition and handler)
+- **Learnings:**
+  - Actions folder created at `app/actions/` for action implementations
+  - ActionDefinition includes: id, name, description, phases[], maxUses, requiresOnTeam, minTargets, maxTargets, validateTargets, execute
+  - Action execute function returns ActionResult for success/failure; handler processes side effects (elimination, game end)
+  - Handler receives full GameContext plus ActionProcessor instance for calling helper methods (eliminatePlayer, endGame, hasStatus)
+  - Protection check can happen in both execute (return early with success=true) and handler (skip elimination)
+  - Win conditions differ by phase: assassination phase wrong target = good wins; mission_voting phase doesn't trigger end game
+  - Registration split: `registerAssassinateAction()` for ActionRegistry, `registerAssassinateHandler(processor)` for ActionProcessor
