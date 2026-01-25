@@ -708,7 +708,7 @@
         "Test useVibration only vibrates for targeted players",
         "Test useGameApi manages loading state correctly"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "page-index",
@@ -741,7 +741,7 @@
         "Players can leave lobby",
         "Redirects to game when status changes to 'playing'"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "page-game",
@@ -758,7 +758,7 @@
         "Displays ActionPanel when actions available",
         "Shows GameOver screen when finished"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "component-lobby",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 38,
+    "completed_features": 41,
     "categories": {
       "functional": 68,
       "visual": 9,

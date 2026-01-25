@@ -586,3 +586,52 @@
   - Display name can be pre-populated from user email (split at @) for better UX
   - Loading states use inline SVG spinners for consistent animation
   - Input transformation (`.toUpperCase()`) in onChange provides immediate feedback for game codes
+
+---
+## 2026-01-25 - test-hooks-all
+- **What was implemented**: Comprehensive unit tests for useGameSubscription hook (28 tests)
+- **Files changed**: 
+  - `app/hooks/useGameSubscription.test.tsx` (created - 28 unit tests)
+- **Learnings:**
+  - Mock Supabase channel with factory function tracking handlers via Map and `_trigger()` method
+  - Test each table subscription independently (games, players, game_actions) - creates 3 channels total
+  - For player INSERT events, hook refetches all players to maintain seat_order sorting
+  - For UPDATE events, use functional setState with map to replace the specific record
+  - For DELETE events, filter out the removed record by id
+  - Test refresh() by using fetchCount variable to return different data on subsequent calls
+  - Game type has `created_at` but no `updated_at` field - check type definitions when creating test helpers
+  - Use `renderHook` from @testing-library/react for cleaner hook testing vs component wrappers
+  - Note: useVibration tests are pending - hook depends on hook-vibration story which is not yet implemented
+
+---
+## 2026-01-25 - page-lobby
+- **What was implemented**: Lobby page for pre-game gathering with real-time updates
+- **Files changed**: 
+  - `app/routes/games.$game.tsx` (rewritten - lobby page implementation)
+  - `app/routes/api.games.$gameId.leave.tsx` (created - leave game endpoint)
+- **Learnings:**
+  - Lobby page pattern: loader fetches initial state from GameService, useEffect sets up Supabase real-time subscriptions
+  - Leave endpoint must prevent host from leaving - host should transfer or delete game instead
+  - Copy-to-clipboard needs fallback: try game code first, then full URL if code fails
+  - Player count display: show X/10 with color coding (green for 5-10, yellow for <5)
+  - Empty slots shown with dashed borders and "Waiting..." placeholder for visual clarity
+  - Host indicator uses crown icon and blue styling to distinguish from regular players
+  - Start button disabled state shows countdown "Need X more players" for clear feedback
+  - Route params access: use `useParams()` hook, param name matches file pattern (`$game` → `params.game`)
+
+---
+## 2026-01-25 - page-game
+- **What was implemented**: Main game play page container with phase routing and real-time state management
+- **Files changed**: 
+  - `app/routes/games.$game.play.tsx` (created - main game page)
+- **Learnings:**
+  - Game play page follows same pattern as lobby: loader validates auth + membership, provides initial data to GameFlowProvider
+  - Use nested route pattern: `/games/:gameId` for lobby, `/games/:gameId/play` for active game
+  - GameFlowProvider wraps content and provides: game, players, ctx, currentPlayer, and API methods
+  - Phase routing via switch statement on `game.phase` - each phase gets its own component
+  - Leader calculation: filter alive players, sort by seat_order, use crown_index % alivePlayers.length
+  - Team membership check: `game.selected_team?.includes(currentPlayer.id)`
+  - Evil team check for showing Fail button: `currentPlayer.team === 'evil'`
+  - Placeholder components can reference useGameFlow() even if full UI is pending separate stories
+  - GameOver screen reveals all player roles after game ends - iterate players with team-based styling
+  - Error states: check authentication (currentUserId null), game existence, and game membership
