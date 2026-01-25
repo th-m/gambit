@@ -7,6 +7,8 @@
 - **Type unions over enums**: Use string literal union types (e.g., `type GamePhase = 'lobby' | ...`) rather than TypeScript enums for better tree-shaking and JSON compatibility
 - **Constants alongside types**: Export const arrays (e.g., `GAME_PHASES`) alongside type unions for runtime validation and iteration
 - **Testing framework**: Vitest configured in `vite.config.ts`, tests go in `app/**/*.test.ts`
+- **API routes location**: React Router file-based routes in `app/routes/`, use `api.*.tsx` naming for API endpoints (e.g., `api.games.create.tsx` → `/api/games/create`)
+- **API route pattern**: Export `action` function for POST/PUT/DELETE, use `loader` for GET. Return `new Response(JSON.stringify(data), { status, headers })` for JSON responses
 - **Type guard pattern**: Use `isX(value: unknown): value is X` pattern with const arrays for validation
 - **Registry pattern**: Class-based registries in `app/registry/` with Map storage, export both class (for testing) and singleton instance (for production)
 
@@ -382,3 +384,17 @@
   - Player interface does NOT have `updated_at` field - check type definitions before creating test helpers
   - Test helpers like `createTestPlayers(count)` simplify repeated test setup
   - Tests should verify both edge cases (min/max) and all intermediate values for player count validation
+
+---
+## 2026-01-25 - api-games-create
+- **What was implemented**: POST /api/games/create endpoint for creating new games
+- **Files changed**: 
+  - `app/routes/api.games.create.tsx` (created)
+- **Learnings:**
+  - React Router 7 uses `action` function exports for POST requests, not separate API files
+  - File naming `api.games.create.tsx` maps to route `/api/games/create` via flat routes
+  - Use `createClient(request)` from supabase server to get authenticated user via `getUser()`
+  - Return `new Response(JSON.stringify(data), { status, headers })` for JSON API responses
+  - Merge auth headers from supabase client with response headers to maintain session cookies
+  - Type safety: Use `satisfies` operator with interface types for response bodies
+  - GameService singleton (`gameService`) persists in-memory data across requests during development

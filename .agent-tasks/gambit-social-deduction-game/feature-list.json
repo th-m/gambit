@@ -479,7 +479,7 @@
         "Returns 401 for unauthenticated",
         "Returns 500 for creation failure"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "api-games-join",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 27,
+    "completed_features": 28,
     "categories": {
       "functional": 68,
       "visual": 9,
