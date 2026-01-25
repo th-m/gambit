@@ -614,8 +614,8 @@ describe('TeamSelection', () => {
     
     if (targetButton) {
       fireEvent.click(targetButton);
-      // Should show 1 selected in the "Selected: X/Y" text
-      expect(screen.getByText(/Selected: 1\/2/)).toBeTruthy();
+      // After selection, the button should have aria-pressed="true"
+      expect(targetButton.getAttribute('aria-pressed')).toBe('true');
     }
   });
 
@@ -644,8 +644,8 @@ describe('TeamSelection', () => {
     if (selectableButtons[0]) fireEvent.click(selectableButtons[0]);
     if (selectableButtons[1]) fireEvent.click(selectableButtons[1]);
     
-    // After selecting 2, the Selected count text shows "2/2"
-    expect(screen.getByText(/Selected: 2\/2/)).toBeTruthy();
+    // After selecting 2, the "Ready to confirm" badge should appear
+    expect(screen.getByText('Ready to confirm')).toBeTruthy();
   });
 });
 
