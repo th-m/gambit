@@ -16,6 +16,7 @@ import { GameBoard } from '~/components/GameBoard';
 import { LeaderVoting } from '~/components/LeaderVoting';
 import { TeamSelection } from '~/components/TeamSelection';
 import { MissionVoting } from '~/components/MissionVoting';
+import { AssassinationPhase } from '~/components/AssassinationPhase';
 import type { Game, Player, GamePhase } from '~/types/game';
 
 // =============================================================================
@@ -143,26 +144,18 @@ function ResolutionPhase() {
   );
 }
 
-function AssassinationPhase() {
+function AssassinationPhaseWrapper() {
   const { game, players, executeAction, currentPlayer } = useGameFlow();
 
   if (!game || !currentPlayer) return null;
 
-  const isAssassin = currentPlayer.character === 'Assassin';
-
   return (
-    <div className="text-center">
-      <h2 className="text-2xl font-bold mb-2 text-red-400">Assassination Phase</h2>
-      {isAssassin ? (
-        <>
-          <p className="text-gray-400 mb-6">Choose a player to assassinate. If you find the Seer, Evil wins!</p>
-          {/* Target selection will be implemented in component-assassination story */}
-          <p className="text-stone-500 text-sm">(Target selection interface coming soon)</p>
-        </>
-      ) : (
-        <p className="text-gray-400">Waiting for the Assassin to make their choice...</p>
-      )}
-    </div>
+    <AssassinationPhase
+      game={game}
+      players={players}
+      currentPlayer={currentPlayer}
+      onExecuteAction={executeAction}
+    />
   );
 }
 
@@ -233,7 +226,7 @@ function renderPhaseContent(phase: GamePhase | null): React.ReactNode {
     case 'resolution':
       return <ResolutionPhase />;
     case 'assassination':
-      return <AssassinationPhase />;
+      return <AssassinationPhaseWrapper />;
     default:
       return (
         <div className="text-center py-12">
