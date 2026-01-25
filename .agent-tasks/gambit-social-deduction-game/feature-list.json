@@ -1,0 +1,1337 @@
+{
+  "task_name": "gambit-social-deduction-game",
+  "description": "A web-based multiplayer social deduction game inspired by Avalon with characters, missions, and special abilities",
+  "created": "2026-01-25",
+  "features": [
+    {
+      "id": "types-game-core",
+      "category": "functional",
+      "priority": 1,
+      "description": "Define core TypeScript types for game entities",
+      "acceptance_criteria": [
+        "Game type includes all fields from technical plan (id, game_key, host_id, status, phase, current_round, crown_index, rejection_count, good_victories, evil_victories, selected_team, winner, end_reason)",
+        "Player type includes all fields (id, game_id, user_id, display_name, character, team, is_alive, seat_order)",
+        "GameAction type includes all fields for audit log",
+        "GameModifier type for temporary effects on game state",
+        "PlayerStatus type for temporary player statuses",
+        "GamePhase enum with all phases (lobby, voting_for_leader, selecting_team, mission_voting, resolution, assassination)",
+        "Types exported from app/types/game.ts"
+      ],
+      "passes": false
+    },
+    {
+      "id": "types-actions-effects",
+      "category": "functional",
+      "priority": 1,
+      "description": "Define TypeScript types for actions and effects system",
+      "acceptance_criteria": [
+        "ActionDefinition type with id, phases, maxUses, requiresOnTeam, validateTargets, execute",
+        "EffectDefinition type with id, hooks, modifiers",
+        "CharacterDefinition type with name, team, description, info, actions, effects",
+        "ActionResult interface with success, message, gameEnded, winner, error",
+        "VoteResult interface with success, allVotesIn, result, tally, error",
+        "ValidationResult interface with valid and error",
+        "GameContext type for passing game state to registries"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-types-validation",
+      "category": "functional",
+      "priority": 1,
+      "description": "Unit tests for type definitions and type guards",
+      "acceptance_criteria": [
+        "Type guard functions for GamePhase validation",
+        "Type guard for valid vote types (yes/no, pass/fail)",
+        "Type guard for valid action types",
+        "Tests verify type guards correctly identify valid/invalid data",
+        "Tests cover edge cases (null, undefined, wrong types)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "registry-action",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement ActionRegistry for managing character actions",
+      "acceptance_criteria": [
+        "register(action) adds action to registry",
+        "get(actionId) returns single action or undefined",
+        "getAll() returns all registered actions",
+        "getAvailableActions(ctx, characterActions) filters by phase and character",
+        "checkConditions(action, ctx) validates action can be used",
+        "execute(actionId, ctx, targets) runs action handler",
+        "Registry is singleton or injectable"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-registry-action",
+      "category": "functional",
+      "priority": 1,
+      "description": "Unit tests for ActionRegistry",
+      "acceptance_criteria": [
+        "Test register adds action correctly",
+        "Test get returns correct action",
+        "Test getAvailableActions filters by current phase",
+        "Test getAvailableActions filters by character actions list",
+        "Test getAvailableActions excludes used one-time actions",
+        "Test checkConditions validates phase requirements",
+        "Test checkConditions validates use limits",
+        "Test execute calls handler with correct parameters"
+      ],
+      "passes": false
+    },
+    {
+      "id": "registry-effect",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement EffectRegistry for passive effects",
+      "acceptance_criteria": [
+        "register(effect) adds effect to registry",
+        "get(effectId) returns single effect",
+        "getModifiers(effectId) returns effect modifiers",
+        "triggerHooks(event, ctx, activeEffects, eventData) fires event handlers",
+        "Effects can modify perception (appears_as_seer, appears_as_good)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-registry-effect",
+      "category": "functional",
+      "priority": 1,
+      "description": "Unit tests for EffectRegistry",
+      "acceptance_criteria": [
+        "Test register adds effect correctly",
+        "Test getModifiers returns correct modifiers",
+        "Test triggerHooks calls appropriate handlers",
+        "Test appears_as_seer effect modifies Oracle perception",
+        "Test appears_as_good effect modifies Seer perception"
+      ],
+      "passes": false
+    },
+    {
+      "id": "registry-character",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement CharacterRegistry for character definitions",
+      "acceptance_criteria": [
+        "register(character) adds character to registry",
+        "get(characterId) returns single character",
+        "getAll() returns all characters",
+        "getByTeam(team) filters characters by good/evil",
+        "resolveInfo(ctx) returns character info with effects applied",
+        "Characters from technical plan registered (Seer, Oracle, Guardian, Tracker, Villager, Assassin, Fixer, Phantom, Saboteur, Minion)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-registry-character",
+      "category": "functional",
+      "priority": 1,
+      "description": "Unit tests for CharacterRegistry",
+      "acceptance_criteria": [
+        "Test all 10 characters from technical plan are registered",
+        "Test getByTeam returns correct characters for good team",
+        "Test getByTeam returns correct characters for evil team",
+        "Test resolveInfo returns correct info for Seer (knows evil)",
+        "Test resolveInfo for Oracle shows Phantom as Seer",
+        "Test resolveInfo for Seer excludes Saboteur from evil list"
+      ],
+      "passes": false
+    },
+    {
+      "id": "registry-eventbus",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement EventBus for game event pub/sub",
+      "acceptance_criteria": [
+        "on(event, handler) subscribes to event, returns unsubscribe function",
+        "emit(event, ctx, data) notifies all subscribers",
+        "useMiddleware(middleware) adds event middleware",
+        "Supports all events: game_start, round_start, round_end, phase_change, leader_approved, leader_rejected, team_selected, mission_success, mission_fail, vote_submitted, player_eliminated, good_wins, evil_wins"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-registry-eventbus",
+      "category": "functional",
+      "priority": 1,
+      "description": "Unit tests for EventBus",
+      "acceptance_criteria": [
+        "Test on subscribes handler correctly",
+        "Test unsubscribe function removes handler",
+        "Test emit calls all subscribed handlers",
+        "Test middleware can intercept events",
+        "Test multiple handlers for same event all called"
+      ],
+      "passes": false
+    },
+    {
+      "id": "service-game-crud",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement GameService for CRUD operations",
+      "acceptance_criteria": [
+        "createGame(hostId) creates game in lobby status with unique game_key",
+        "getGameByKey(gameKey) finds game by shareable code",
+        "getGameById(gameId) finds game by UUID",
+        "getPlayers(gameId) returns all players in game",
+        "getPlayer(gameId, userId) returns specific player",
+        "addPlayer(gameId, userId, displayName) adds player to game",
+        "removePlayer(gameId, userId) removes player from game",
+        "updateGame(gameId, updates) updates game state",
+        "updatePlayer(playerId, updates) updates player state",
+        "Game key is 6-8 alphanumeric characters"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-service-game",
+      "category": "functional",
+      "priority": 1,
+      "description": "Unit tests for GameService",
+      "acceptance_criteria": [
+        "Test createGame generates unique game keys",
+        "Test createGame sets correct initial state",
+        "Test getGameByKey returns correct game",
+        "Test getGameByKey returns null for invalid key",
+        "Test addPlayer correctly adds to game",
+        "Test addPlayer handles duplicate join gracefully",
+        "Test removePlayer correctly removes player",
+        "Test updateGame returns updated entity",
+        "Test updatePlayer returns updated entity"
+      ],
+      "passes": false
+    },
+    {
+      "id": "service-vote-processor",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement VoteProcessor for vote handling",
+      "acceptance_criteria": [
+        "submitLeaderVote(gameId, playerId, vote) records leader vote",
+        "submitMissionVote(gameId, playerId, vote) records mission vote",
+        "checkLeaderVoteCompletion tallies and resolves leader votes",
+        "processLeaderVoteResult updates game state on approval/rejection",
+        "checkMissionVoteCompletion tallies mission votes",
+        "processMissionResult updates scores, checks win conditions",
+        "triggerBeeperVibration sends broadcast to beepered players",
+        "cleanupRound removes expired statuses/modifiers",
+        "Handles 3-rejection auto-fail rule"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-service-vote-processor",
+      "category": "functional",
+      "priority": 1,
+      "description": "Unit tests for VoteProcessor",
+      "acceptance_criteria": [
+        "Test prevents duplicate voting",
+        "Test good players cannot vote fail on missions",
+        "Test non-team members cannot vote on missions",
+        "Test correct phase validation",
+        "Test applies rig_vote modifier correctly",
+        "Test handles 3-rejection auto-fail",
+        "Test triggers assassination phase when good wins 3 and Assassin alive",
+        "Test correctly calculates 2-fail requirement for round 4 with 7+ players",
+        "Test leader vote majority calculation",
+        "Test mission vote pass/fail determination"
+      ],
+      "passes": false
+    },
+    {
+      "id": "service-action-processor",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement ActionProcessor for special abilities",
+      "acceptance_criteria": [
+        "executeAction(gameId, playerId, actionId, targetIds) validates and executes",
+        "registerHandler(handler) adds action type handler",
+        "Validates phase for action",
+        "Validates use limits",
+        "Validates target count and requirements",
+        "Returns ActionResult with success, message, gameEnded, winner"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-service-action-processor",
+      "category": "functional",
+      "priority": 1,
+      "description": "Unit tests for ActionProcessor",
+      "acceptance_criteria": [
+        "Test phase validation rejects wrong phase",
+        "Test use limit enforcement",
+        "Test target validation (count limits)",
+        "Test protection blocks assassination",
+        "Test Seer assassination ends game for evil",
+        "Test rigged votes force mission pass",
+        "Test beeper status created correctly",
+        "Test sabotage adds extra fail vote"
+      ],
+      "passes": false
+    },
+    {
+      "id": "service-state-validator",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement StateValidator for game state transitions",
+      "acceptance_criteria": [
+        "validateGameStart(gameId, hostId) checks if game can start",
+        "validateTeamSelection(gameId, leaderId, teamIds) validates team",
+        "validateJoinGame(gameId, userId) checks if user can join",
+        "getMissionSize(playerCount, round) returns required team size",
+        "Player count validation (5-10)",
+        "Team size matches round requirements from technical plan",
+        "Cannot select eliminated players"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-service-state-validator",
+      "category": "functional",
+      "priority": 1,
+      "description": "Unit tests for StateValidator",
+      "acceptance_criteria": [
+        "Test only host can start game",
+        "Test player count validation (rejects <5 or >10)",
+        "Test team size matches requirements for each player count and round",
+        "Test only leader can select team",
+        "Test cannot select eliminated players",
+        "Test cannot join game already in progress",
+        "Test cannot join full game (10 players)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "action-assassinate",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement assassinate action for Assassin",
+      "acceptance_criteria": [
+        "Available in mission_voting and assassination phases",
+        "Has 1 use limit",
+        "Requires single target",
+        "Eliminates target player",
+        "If target is Seer, evil wins immediately",
+        "If target is not Seer during assassination phase, good wins",
+        "Blocked by protect status"
+      ],
+      "passes": false
+    },
+    {
+      "id": "action-rig-vote",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement rig_vote action for Fixer",
+      "acceptance_criteria": [
+        "Available in mission_voting phase",
+        "Has 1 use limit",
+        "No target required",
+        "Creates game_modifier that forces mission pass",
+        "Modifier applies only to current round"
+      ],
+      "passes": false
+    },
+    {
+      "id": "action-plant-beeper",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement plant_beeper action for Tracker",
+      "acceptance_criteria": [
+        "Available in selecting_team phase",
+        "Has 1 use limit",
+        "Requires exactly 2 targets",
+        "Validates 1 good + 1 evil player selected",
+        "Creates player_status for each target",
+        "Tagged players' devices vibrate on vote reveal"
+      ],
+      "passes": false
+    },
+    {
+      "id": "action-protect",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement protect action for Guardian",
+      "acceptance_criteria": [
+        "Available in mission_voting phase",
+        "Has 1 use limit",
+        "Requires single target",
+        "Creates player_status 'protected' for target",
+        "Protection expires at end of round",
+        "Protected player cannot be assassinated"
+      ],
+      "passes": false
+    },
+    {
+      "id": "action-sabotage",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement sabotage action for Saboteur",
+      "acceptance_criteria": [
+        "Available in mission_voting phase",
+        "Has 1 use limit",
+        "Requires player to be on mission team",
+        "Adds one extra fail vote to mission",
+        "Creates game_modifier for current round"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-actions-all",
+      "category": "functional",
+      "priority": 1,
+      "description": "Integration tests for all character actions",
+      "acceptance_criteria": [
+        "Test assassinate kills target correctly",
+        "Test assassinate on Seer ends game",
+        "Test assassinate blocked by protect",
+        "Test rig_vote forces mission pass",
+        "Test plant_beeper validates target alignment",
+        "Test protect creates correct status",
+        "Test sabotage adds fail vote to tally",
+        "Test actions respect use limits"
+      ],
+      "passes": false
+    },
+    {
+      "id": "effect-appears-as-seer",
+      "category": "functional",
+      "priority": 2,
+      "description": "Implement appears_as_seer effect for Phantom",
+      "acceptance_criteria": [
+        "Effect registered in EffectRegistry",
+        "Modifies info resolution for Oracle",
+        "Oracle sees Phantom as Seer candidate",
+        "Does not affect actual Seer's perception"
+      ],
+      "passes": false
+    },
+    {
+      "id": "effect-appears-as-good",
+      "category": "functional",
+      "priority": 2,
+      "description": "Implement appears_as_good effect for Saboteur",
+      "acceptance_criteria": [
+        "Effect registered in EffectRegistry",
+        "Modifies info resolution for Seer",
+        "Seer does not see Saboteur in evil list",
+        "Does not affect other evil players' knowledge"
+      ],
+      "passes": false
+    },
+    {
+      "id": "util-character-assignment",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement character assignment algorithm",
+      "acceptance_criteria": [
+        "Assigns correct number of good/evil based on player count (5p: 3/2, 6p: 4/2, 7p: 4/3, 8p: 5/3, 9p: 6/3, 10p: 6/4)",
+        "Always includes Seer and Assassin",
+        "Randomizes character selection",
+        "Randomizes player order (seat_order)",
+        "Assigns crown_index randomly"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-util-character-assignment",
+      "category": "functional",
+      "priority": 1,
+      "description": "Unit tests for character assignment",
+      "acceptance_criteria": [
+        "Test correct team balance for each player count",
+        "Test Seer always assigned",
+        "Test Assassin always assigned",
+        "Test randomization produces different results",
+        "Test all players get unique characters",
+        "Test seat_order is 0 to N-1"
+      ],
+      "passes": false
+    },
+    {
+      "id": "util-game-utils",
+      "category": "functional",
+      "priority": 2,
+      "description": "Implement game utility functions",
+      "acceptance_criteria": [
+        "generateGameKey() creates unique 6-8 char alphanumeric code",
+        "formatJoinLink(gameKey) creates shareable URL",
+        "getMissionSize(playerCount, round) returns team size from table",
+        "getRequiredFailVotes(playerCount, round) returns fail threshold",
+        "checkWinCondition(game) evaluates all win conditions"
+      ],
+      "passes": false
+    },
+    {
+      "id": "api-games-create",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement POST /api/games/create endpoint",
+      "acceptance_criteria": [
+        "Requires authentication",
+        "Accepts displayName in request body",
+        "Creates game via GameService",
+        "Adds creator as first player",
+        "Returns game and gameKey",
+        "Returns 401 for unauthenticated",
+        "Returns 500 for creation failure"
+      ],
+      "passes": false
+    },
+    {
+      "id": "api-games-join",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement POST /api/games/:gameId/join endpoint",
+      "acceptance_criteria": [
+        "Requires authentication",
+        "Accepts displayName in request body",
+        "Validates game exists and is in lobby",
+        "Validates game not full (max 10)",
+        "Adds player to game",
+        "Returns player object",
+        "Returns 400 for game full or started",
+        "Returns 404 for game not found"
+      ],
+      "passes": false
+    },
+    {
+      "id": "api-games-start",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement POST /api/games/:gameId/start endpoint",
+      "acceptance_criteria": [
+        "Requires authentication",
+        "Only host can start",
+        "Validates player count (5-10)",
+        "Assigns characters to players",
+        "Sets game status to 'playing'",
+        "Sets phase to 'voting_for_leader'",
+        "Sets current_round to 1",
+        "Returns 400 for invalid player count",
+        "Returns 403 for non-host"
+      ],
+      "passes": false
+    },
+    {
+      "id": "api-games-vote",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement POST /api/games/:gameId/vote endpoint",
+      "acceptance_criteria": [
+        "Requires authentication",
+        "Accepts voteType (leader/mission) and vote (yes/no or pass/fail)",
+        "Validates correct phase for vote type",
+        "Validates player in game",
+        "For mission votes, validates player on team",
+        "For mission votes, validates good players can only vote pass",
+        "Records vote via VoteProcessor",
+        "Returns VoteResult with success, allVotesIn, result, tally",
+        "Returns 400 for invalid vote"
+      ],
+      "passes": false
+    },
+    {
+      "id": "api-games-team",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement POST /api/games/:gameId/team endpoint",
+      "acceptance_criteria": [
+        "Requires authentication",
+        "Only current leader can call",
+        "Accepts teamIds array",
+        "Validates team size matches round requirement",
+        "Validates all players exist and are alive",
+        "Updates game.selected_team",
+        "Advances phase to mission_voting",
+        "Returns 400 for wrong count/invalid players",
+        "Returns 403 for non-leader"
+      ],
+      "passes": false
+    },
+    {
+      "id": "api-games-action",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement POST /api/games/:gameId/action endpoint",
+      "acceptance_criteria": [
+        "Requires authentication",
+        "Accepts actionId and targetIds",
+        "Validates player has action",
+        "Validates action usable in current phase",
+        "Validates targets meet requirements",
+        "Executes action via ActionProcessor",
+        "Returns ActionResult",
+        "Returns 400 for invalid action/targets",
+        "Returns 403 for unauthorized action"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-api-routes",
+      "category": "functional",
+      "priority": 1,
+      "description": "Integration tests for all API routes",
+      "acceptance_criteria": [
+        "Test create game flow",
+        "Test join game flow",
+        "Test start game with character assignment",
+        "Test complete voting round",
+        "Test action execution with effects",
+        "Test win condition triggers",
+        "Test error responses for all failure cases",
+        "Test authentication required for all routes"
+      ],
+      "passes": false
+    },
+    {
+      "id": "context-game-flow",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement GameFlowContext for client-side state",
+      "acceptance_criteria": [
+        "Provides game, players, ctx, isLoading, error",
+        "Provides submitLeaderVote(approve) method",
+        "Provides selectTeam(playerIds) method",
+        "Provides submitMissionVote(vote) method",
+        "Provides executeAction(actionId, targetIds) method",
+        "Initializes Supabase subscriptions on mount",
+        "Updates state on real-time events",
+        "Cleans up subscriptions on unmount"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-context-game-flow",
+      "category": "functional",
+      "priority": 1,
+      "description": "Unit tests for GameFlowContext",
+      "acceptance_criteria": [
+        "Test initializes subscriptions on mount",
+        "Test updates state on real-time events",
+        "Test cleans up subscriptions on unmount",
+        "Test API methods call correct endpoints",
+        "Test error handling for failed API calls"
+      ],
+      "passes": false
+    },
+    {
+      "id": "hook-game-subscription",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement useGameSubscription hook",
+      "acceptance_criteria": [
+        "Accepts gameId parameter",
+        "Returns game, players, actions",
+        "Fetches initial state on mount",
+        "Subscribes to games table changes",
+        "Subscribes to players table changes",
+        "Subscribes to game_actions table changes",
+        "Updates state on INSERT/UPDATE/DELETE events",
+        "Unsubscribes on unmount"
+      ],
+      "passes": false
+    },
+    {
+      "id": "hook-vote-subscription",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement useVoteSubscription hook",
+      "acceptance_criteria": [
+        "Accepts gameId, round, phase parameters",
+        "Returns votes as Record<playerId, vote>",
+        "Fetches existing votes for round/phase",
+        "Subscribes to new vote actions",
+        "Filters votes by round and phase",
+        "Updates vote map in real-time"
+      ],
+      "passes": false
+    },
+    {
+      "id": "hook-vote-completion",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement useVoteCompletion hook",
+      "acceptance_criteria": [
+        "Monitors vote count vs expected voters",
+        "Triggers server-side processing when complete",
+        "Handles leader voting completion",
+        "Handles mission voting completion",
+        "Debounces to prevent duplicate triggers"
+      ],
+      "passes": false
+    },
+    {
+      "id": "hook-vibration",
+      "category": "functional",
+      "priority": 2,
+      "description": "Implement useVibration hook",
+      "acceptance_criteria": [
+        "Accepts gameId and playerId parameters",
+        "Subscribes to vibration broadcast channel",
+        "Checks if current player is in vibration targets",
+        "Triggers navigator.vibrate() API",
+        "Graceful degradation without API support"
+      ],
+      "passes": false
+    },
+    {
+      "id": "hook-game-api",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement useGameApi hook",
+      "acceptance_criteria": [
+        "Returns loading and error state",
+        "Provides submitVote(gameId, voteType, vote) method",
+        "Provides selectTeam(gameId, teamIds) method",
+        "Provides executeAction(gameId, actionId, targetIds) method",
+        "Provides startGame(gameId) method",
+        "Manages loading state during requests",
+        "Handles and surfaces errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-hooks-all",
+      "category": "functional",
+      "priority": 1,
+      "description": "Unit tests for all custom hooks",
+      "acceptance_criteria": [
+        "Test useGameSubscription returns initial state",
+        "Test useGameSubscription updates on events",
+        "Test useGameSubscription unsubscribes on unmount",
+        "Test useVoteSubscription filters correctly",
+        "Test useVoteCompletion triggers at right time",
+        "Test useVibration only vibrates for targeted players",
+        "Test useGameApi manages loading state correctly"
+      ],
+      "passes": false
+    },
+    {
+      "id": "page-index",
+      "category": "functional",
+      "priority": 1,
+      "description": "Enhance home page with game creation/join",
+      "acceptance_criteria": [
+        "Shows sign-in button for unauthenticated users",
+        "Shows 'Start New Game' button for authenticated users",
+        "Provides game code input for joining",
+        "Validates game code format (6-8 alphanumeric)",
+        "Loading states during create/join",
+        "Error handling with user feedback",
+        "Redirects to lobby after create/join"
+      ],
+      "passes": false
+    },
+    {
+      "id": "page-lobby",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement lobby page for pre-game gathering",
+      "acceptance_criteria": [
+        "Displays shareable game code",
+        "Copy link functionality copies correct URL",
+        "Shows list of joined players with real-time updates",
+        "Shows player count and requirements (5-10)",
+        "Host sees 'Start Game' button",
+        "Start button disabled with fewer than 5 players",
+        "Players can leave lobby",
+        "Redirects to game when status changes to 'playing'"
+      ],
+      "passes": false
+    },
+    {
+      "id": "page-game",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement main game page container",
+      "acceptance_criteria": [
+        "Wraps content in GameFlowProvider",
+        "Validates user is authenticated and in game",
+        "Redirects to lobby if game not started",
+        "Fetches initial game and player state",
+        "Renders phase-appropriate component",
+        "Displays CharacterInfoPanel",
+        "Displays ActionPanel when actions available",
+        "Shows GameOver screen when finished"
+      ],
+      "passes": false
+    },
+    {
+      "id": "component-lobby",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement Lobby component",
+      "acceptance_criteria": [
+        "Displays game code prominently",
+        "Copy button copies code/link to clipboard",
+        "Copy button shows success feedback",
+        "Renders player list with host indicator",
+        "Shows player count X/10",
+        "Start button state reflects player count",
+        "Leave button removes player from game",
+        "Loading states for actions"
+      ],
+      "passes": false
+    },
+    {
+      "id": "component-gameboard",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement GameBoard component",
+      "acceptance_criteria": [
+        "Subscribes to real-time game updates via context",
+        "Renders ScoreBoard with current standings",
+        "Routes to correct phase component based on game.phase",
+        "Renders CharacterInfoPanel in sidebar",
+        "Renders ActionPanel when actions available",
+        "Initializes vibration listener for beepered players",
+        "Shows loading state during transitions"
+      ],
+      "passes": false
+    },
+    {
+      "id": "component-leader-voting",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement LeaderVoting component",
+      "acceptance_criteria": [
+        "Displays current crown holder's name",
+        "Shows rejection count (X/3)",
+        "Provides Approve/Reject buttons",
+        "Buttons disabled after voting",
+        "Shows waiting message after voting",
+        "Displays vote results when all votes in",
+        "Handles rapid double-click prevention",
+        "Triggers vote processing on completion"
+      ],
+      "passes": false
+    },
+    {
+      "id": "component-team-selection",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement TeamSelection component",
+      "acceptance_criteria": [
+        "Displays required team size for current round",
+        "Shows selectable player grid (alive players only)",
+        "Only leader can select players",
+        "Cannot exceed team size limit",
+        "Cannot select eliminated players",
+        "Visual feedback on selected players",
+        "Confirm button disabled until correct count",
+        "Non-leaders see waiting message with current selection"
+      ],
+      "passes": false
+    },
+    {
+      "id": "component-mission-voting",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement MissionVoting component",
+      "acceptance_criteria": [
+        "Identifies if current player is on team",
+        "Team members see Pass button",
+        "Evil team members see Fail button",
+        "Good players cannot vote fail",
+        "Non-team members see waiting state",
+        "Shows vote progress (X/Y voted)",
+        "Results display shuffled (no attribution)",
+        "Handles vote modifiers (rig_vote)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "component-assassination",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement AssassinationPhase component",
+      "acceptance_criteria": [
+        "Only Assassin can select target",
+        "Displays selectable player grid for Assassin",
+        "Non-Assassin players see waiting state",
+        "Submit button for Assassin",
+        "Correct target (Seer) ends game for evil",
+        "Wrong target ends game for good",
+        "Displays result and transitions to game over"
+      ],
+      "passes": false
+    },
+    {
+      "id": "component-action-panel",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement ActionPanel component",
+      "acceptance_criteria": [
+        "Filters available actions based on current phase",
+        "Hides used one-time actions",
+        "Displays action buttons with descriptions",
+        "Integrates with TargetSelector when targets needed",
+        "Submit action execution",
+        "Shows confirmation/result",
+        "Handles execution errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "component-target-selector",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement TargetSelector component",
+      "acceptance_criteria": [
+        "Filters eligible targets based on action requirements",
+        "Displays player grid with selection state",
+        "Enforces target count limits",
+        "Validates target requirements",
+        "Visual feedback on selection",
+        "Calls onChange with selected players"
+      ],
+      "passes": false
+    },
+    {
+      "id": "component-character-info",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement CharacterInfoPanel component",
+      "acceptance_criteria": [
+        "Displays character name and team",
+        "Shows character description",
+        "Renders resolved information (accounting for effects)",
+        "Seer sees evil players (except Saboteur)",
+        "Oracle sees Seer candidates (including Phantom)",
+        "Marks unreliable info appropriately"
+      ],
+      "passes": false
+    },
+    {
+      "id": "component-scoreboard",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement ScoreBoard component",
+      "acceptance_criteria": [
+        "Shows round indicators (1-5)",
+        "Displays good vs evil victory counts",
+        "Highlights current round",
+        "Shows mission results for completed rounds",
+        "Visual indication of progress toward victory"
+      ],
+      "passes": false
+    },
+    {
+      "id": "component-player-list",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement PlayerList component",
+      "acceptance_criteria": [
+        "Displays player names",
+        "Shows crown icon for leader",
+        "Indicates team selection state",
+        "Shows eliminated status",
+        "Optional: shows alive/dead status",
+        "Supports selectable mode for team/target selection"
+      ],
+      "passes": false
+    },
+    {
+      "id": "component-vote-results",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement VoteResults component",
+      "acceptance_criteria": [
+        "Displays vote counts",
+        "Shows pass/fail or approve/reject result",
+        "Animated reveal effect",
+        "Provides continue button",
+        "Different styling for success/failure"
+      ],
+      "passes": false
+    },
+    {
+      "id": "component-game-over",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement GameOver component",
+      "acceptance_criteria": [
+        "Displays winning team prominently",
+        "Shows end reason (assassination, missions, etc.)",
+        "Reveals all player roles",
+        "Provides 'Play Again' button (creates new game)",
+        "Provides 'Return Home' button",
+        "Celebration/defeat animation based on outcome"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-components-unit",
+      "category": "functional",
+      "priority": 2,
+      "description": "Unit tests for all game components",
+      "acceptance_criteria": [
+        "Test Lobby displays correct player count",
+        "Test Lobby start button state",
+        "Test LeaderVoting buttons disabled after vote",
+        "Test TeamSelection enforces team size",
+        "Test MissionVoting hides fail button for good players",
+        "Test AssassinationPhase only Assassin can select",
+        "Test ActionPanel filters by phase",
+        "Test CharacterInfoPanel applies effects"
+      ],
+      "passes": false
+    },
+    {
+      "id": "ui-lobby-design",
+      "category": "visual",
+      "priority": 2,
+      "description": "Design and style lobby interface",
+      "acceptance_criteria": [
+        "Game code displayed prominently with copy functionality",
+        "Player list with avatars/initials",
+        "Host badge visible on host player",
+        "Start button with clear call to action",
+        "Loading states with spinners/skeletons",
+        "Consistent with overall app theme"
+      ],
+      "passes": false
+    },
+    {
+      "id": "ui-game-board-design",
+      "category": "visual",
+      "priority": 2,
+      "description": "Design and style main game board",
+      "acceptance_criteria": [
+        "Clear phase indicator",
+        "Score board with round progress visualization",
+        "Player area showing all participants",
+        "Action panel positioned for easy access",
+        "Character info panel in consistent location",
+        "Responsive layout for different screen sizes"
+      ],
+      "passes": false
+    },
+    {
+      "id": "ui-voting-interfaces",
+      "category": "visual",
+      "priority": 2,
+      "description": "Design voting interfaces",
+      "acceptance_criteria": [
+        "Leader voting with clear approve/reject buttons",
+        "Mission voting with pass/fail distinction",
+        "Vote progress indicator",
+        "Vote result reveal animation",
+        "Clear visual for your vote vs waiting"
+      ],
+      "passes": false
+    },
+    {
+      "id": "ui-character-cards",
+      "category": "visual",
+      "priority": 2,
+      "description": "Design character card visuals",
+      "acceptance_criteria": [
+        "Character name with team color indication",
+        "Character artwork or icon",
+        "Description text readable",
+        "Special abilities listed clearly",
+        "Known information displayed appropriately"
+      ],
+      "passes": false
+    },
+    {
+      "id": "ui-player-selection",
+      "category": "visual",
+      "priority": 2,
+      "description": "Design player selection interfaces",
+      "acceptance_criteria": [
+        "Player cards/tiles for selection",
+        "Clear selected/unselected states",
+        "Eliminated players visually distinct",
+        "Current leader marked with crown",
+        "Team members highlighted during mission"
+      ],
+      "passes": false
+    },
+    {
+      "id": "ui-game-over-screen",
+      "category": "visual",
+      "priority": 2,
+      "description": "Design game over screen",
+      "acceptance_criteria": [
+        "Victory/defeat clearly communicated",
+        "Team color theme (good=blue, evil=red)",
+        "All roles revealed in organized display",
+        "End reason prominently shown",
+        "Call to action buttons styled"
+      ],
+      "passes": false
+    },
+    {
+      "id": "ui-responsive-game",
+      "category": "visual",
+      "priority": 2,
+      "description": "Responsive design for game interface",
+      "acceptance_criteria": [
+        "Game playable on mobile viewport (< 768px)",
+        "Tablet layout optimized (768px - 1024px)",
+        "Desktop layout uses full space (> 1024px)",
+        "Touch targets appropriately sized on mobile",
+        "No horizontal scrolling on any viewport"
+      ],
+      "passes": false
+    },
+    {
+      "id": "ui-animations-transitions",
+      "category": "visual",
+      "priority": 3,
+      "description": "Implement animations and transitions",
+      "acceptance_criteria": [
+        "Phase transition animations",
+        "Vote reveal animation",
+        "Player selection feedback",
+        "Action execution effects",
+        "Win/lose celebration effects",
+        "Loading state animations"
+      ],
+      "passes": false
+    },
+    {
+      "id": "security-server-validation",
+      "category": "security",
+      "priority": 1,
+      "description": "Implement comprehensive server-side validation",
+      "acceptance_criteria": [
+        "All game state changes validated on server",
+        "Player membership verified for all game actions",
+        "Phase validation for all operations",
+        "Vote eligibility checked server-side",
+        "Action authorization validated",
+        "Cannot perform actions for other players"
+      ],
+      "passes": false
+    },
+    {
+      "id": "security-data-privacy",
+      "category": "security",
+      "priority": 1,
+      "description": "Implement data privacy for character info",
+      "acceptance_criteria": [
+        "Character/team info only sent to relevant players",
+        "Seer info filtered to show only evil players (with effects applied)",
+        "Oracle info filtered appropriately",
+        "Vote attribution not exposed until results",
+        "Mission votes never attributed to specific players",
+        "Supabase RLS policies enforce access control"
+      ],
+      "passes": false
+    },
+    {
+      "id": "security-rate-limiting",
+      "category": "security",
+      "priority": 2,
+      "description": "Implement rate limiting for game actions",
+      "acceptance_criteria": [
+        "Vote submissions rate limited",
+        "Action executions rate limited",
+        "Game creation rate limited per user",
+        "Prevents spam/DoS of game state",
+        "Appropriate error messages for rate limited requests"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-security",
+      "category": "security",
+      "priority": 1,
+      "description": "Security tests for game integrity",
+      "acceptance_criteria": [
+        "Test cannot vote as another player",
+        "Test cannot see other player's character",
+        "Test cannot perform actions in wrong phase",
+        "Test cannot join game as different user",
+        "Test rate limiting blocks excessive requests",
+        "Test RLS policies enforce access"
+      ],
+      "passes": false
+    },
+    {
+      "id": "a11y-keyboard-navigation",
+      "category": "accessibility",
+      "priority": 2,
+      "description": "Keyboard navigation for game interface",
+      "acceptance_criteria": [
+        "Tab order follows logical flow",
+        "Focus indicators visible on all focusable elements",
+        "Enter/Space activates buttons",
+        "Arrow keys navigate player selection",
+        "Escape closes any open modals/panels"
+      ],
+      "passes": false
+    },
+    {
+      "id": "a11y-screen-reader",
+      "category": "accessibility",
+      "priority": 2,
+      "description": "Screen reader support for game",
+      "acceptance_criteria": [
+        "Game phase announced via live regions",
+        "Vote results announced",
+        "Player turn announced",
+        "Character info accessible",
+        "Error messages announced",
+        "ARIA labels on all interactive elements"
+      ],
+      "passes": false
+    },
+    {
+      "id": "perf-real-time-efficiency",
+      "category": "performance",
+      "priority": 2,
+      "description": "Optimize real-time subscriptions",
+      "acceptance_criteria": [
+        "Subscribe only to relevant tables/filters",
+        "Proper cleanup of subscriptions on unmount",
+        "Batch related state updates",
+        "No memory leaks from subscriptions",
+        "Reconnection handling for dropped connections"
+      ],
+      "passes": false
+    },
+    {
+      "id": "perf-bundle-size",
+      "category": "performance",
+      "priority": 3,
+      "description": "Optimize bundle size and loading",
+      "acceptance_criteria": [
+        "Game routes code-split",
+        "Initial bundle under reasonable size",
+        "Loading indicators during route transitions",
+        "Static assets cached appropriately"
+      ],
+      "passes": false
+    },
+    {
+      "id": "e2e-good-victory",
+      "category": "functional",
+      "priority": 2,
+      "description": "End-to-end test for good team victory",
+      "acceptance_criteria": [
+        "Complete game flow from lobby to victory",
+        "Good team completes 3 missions",
+        "Assassination phase triggered",
+        "Assassin picks wrong target",
+        "Good team declared winner"
+      ],
+      "passes": false
+    },
+    {
+      "id": "e2e-evil-victory-missions",
+      "category": "functional",
+      "priority": 2,
+      "description": "End-to-end test for evil victory via missions",
+      "acceptance_criteria": [
+        "Complete game flow from lobby to victory",
+        "Evil team fails 3 missions",
+        "Evil team declared winner",
+        "Correct end reason displayed"
+      ],
+      "passes": false
+    },
+    {
+      "id": "e2e-evil-victory-assassination",
+      "category": "functional",
+      "priority": 2,
+      "description": "End-to-end test for evil victory via assassination",
+      "acceptance_criteria": [
+        "Good completes 3 missions",
+        "Assassination phase triggered",
+        "Assassin correctly identifies Seer",
+        "Evil team declared winner",
+        "Correct end reason (Seer assassinated)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "e2e-rejection-auto-fail",
+      "category": "functional",
+      "priority": 2,
+      "description": "End-to-end test for 3-rejection auto-fail",
+      "acceptance_criteria": [
+        "Leader rejected 3 consecutive times",
+        "Evil automatically gets point",
+        "Round advances correctly",
+        "Rejection count resets"
+      ],
+      "passes": false
+    },
+    {
+      "id": "e2e-special-actions",
+      "category": "functional",
+      "priority": 2,
+      "description": "End-to-end test for special action effects",
+      "acceptance_criteria": [
+        "Guardian protect prevents assassination",
+        "Fixer rig_vote forces mission pass",
+        "Tracker beeper causes vibration on vote reveal",
+        "Saboteur adds extra fail vote"
+      ],
+      "passes": false
+    },
+    {
+      "id": "e2e-player-reconnect",
+      "category": "functional",
+      "priority": 3,
+      "description": "End-to-end test for player disconnect/reconnect",
+      "acceptance_criteria": [
+        "Player can refresh browser during game",
+        "Game state restored correctly",
+        "Real-time subscriptions re-established",
+        "No duplicate actions from reconnect"
+      ],
+      "passes": false
+    },
+    {
+      "id": "db-migrations",
+      "category": "functional",
+      "priority": 1,
+      "description": "Create database migrations for game tables",
+      "acceptance_criteria": [
+        "Migration for games table with all columns",
+        "Migration for players table with all columns",
+        "Migration for game_actions table",
+        "Migration for game_modifiers table",
+        "Migration for player_statuses table",
+        "Migration for game_logs table",
+        "Indexes created as specified in technical plan",
+        "RLS policies created for each table"
+      ],
+      "passes": false
+    },
+    {
+      "id": "db-realtime-config",
+      "category": "functional",
+      "priority": 1,
+      "description": "Configure Supabase real-time replication",
+      "acceptance_criteria": [
+        "Enable replication for games table",
+        "Enable replication for players table",
+        "Enable replication for game_actions table",
+        "Enable replication for player_statuses table",
+        "Verify real-time events fire correctly"
+      ],
+      "passes": false
+    }
+  ],
+  "metadata": {
+    "total_features": 85,
+    "completed_features": 0,
+    "categories": {
+      "functional": 68,
+      "visual": 9,
+      "performance": 2,
+      "security": 4,
+      "accessibility": 2
+    }
+  }
+}
