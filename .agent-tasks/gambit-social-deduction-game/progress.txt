@@ -788,3 +788,17 @@
   - For actions without targets (minTargets: 0), execute immediately without showing TargetSelector
   - ResultDisplay component handles both success/error states with appropriate styling and game-end messaging
   - Click debouncing (CLICK_DEBOUNCE_MS) prevents double-submission of actions
+
+---
+## 2026-01-25 - security-server-validation
+- **What was implemented**: Verified comprehensive server-side validation already exists in codebase
+- **Files changed**: None (validation was already complete)
+- **Learnings:**
+  - Server-side validation is layered: Routes validate auth/input format → Services validate game state/business rules
+  - All API routes use same pattern: check auth → validate params → delegate to service → return result
+  - VoteProcessor handles: phase check, duplicate votes, team membership, good-player-fail restriction
+  - ActionProcessor handles: player alive, action exists, phase correct, use limits, target validation
+  - StateValidator handles: game start (host check, player count), team selection (leader check, team size, alive players)
+  - Routes return 401 (unauthorized), 403 (forbidden - not in game/not leader), 404 (not found), 400 (invalid request)
+  - Cannot perform actions for other players: routes use `gameService.getPlayer(gameId, user.id)` to find player from authenticated user
+  - 43 integration tests in api.routes.integration.test.ts cover all security scenarios
