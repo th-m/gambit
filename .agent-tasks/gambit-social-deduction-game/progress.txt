@@ -874,3 +874,18 @@
   - Keyboard support: Enter and Space keys should trigger selection (via onKeyDown handler)
   - PlayerItem sub-component keeps main component clean - separate presentation logic from list management
   - Component tests in jsdom environment should use standard vitest assertions (toBeTruthy, toBeNull) not jest-dom matchers
+
+---
+## 2026-01-25 - component-vote-results
+- **What was implemented**: Reusable VoteResults component with animated reveal effect and continue button
+- **Files changed**: 
+  - `app/components/VoteResults.tsx` (created - main component)
+  - `app/components/VoteResults.test.tsx` (created - 29 unit tests)
+- **Learnings:**
+  - Animation phases (initial → revealing → complete) managed via useState with setTimeout transitions
+  - Staggered animation via `transitionDelay` CSS style prop based on index * VOTE_STAGGER_MS
+  - Auto-continue countdown uses separate useEffect that starts after phase === 'complete'
+  - VoteCard sub-component uses transform + opacity transitions for reveal effect
+  - shuffleArray (Fisher-Yates) used for mission votes to prevent attribution
+  - Both leader (yes/no/approved) and mission (pass/fail/passed) result types supported via discriminated union props
+  - @testing-library/user-event not installed - use fireEvent.click instead for click testing with fake timers

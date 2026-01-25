@@ -947,7 +947,7 @@
         "Provides continue button",
         "Different styling for success/failure"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "component-game-over",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 86,
-    "completed_features": 58,
+    "completed_features": 59,
     "categories": {
       "functional": 68,
       "visual": 9,
