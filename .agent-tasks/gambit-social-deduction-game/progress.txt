@@ -889,3 +889,20 @@
   - shuffleArray (Fisher-Yates) used for mission votes to prevent attribution
   - Both leader (yes/no/approved) and mission (pass/fail/passed) result types supported via discriminated union props
   - @testing-library/user-event not installed - use fireEvent.click instead for click testing with fake timers
+
+---
+## 2026-01-25 - component-game-over
+- **What was implemented**: GameOver component with celebration/defeat animations
+- **Files changed**: 
+  - `app/components/GameOver.tsx` (created - full game over screen)
+  - `app/routes/games.$game.play.tsx` (updated - imports and uses GameOver)
+- **Learnings:**
+  - Animation patterns: use CSS keyframes for confetti/particles, inject via <style> element inside component
+  - Staggered reveals use transitionDelay calculated from index * stagger constant
+  - Animation phases (initial → revealing → complete) managed via useState with setTimeout transitions
+  - Player prop type should accept `null` in addition to `undefined` when coming from React context (context returns `Player | null`)
+  - Play Again flow: make POST to /api/games/create, extract gameId from response, navigate to new game lobby
+  - Team-based animations: confetti (falling) for good, dark particles (rising) for evil - opposite directions emphasize thematic difference
+  - formatEndReason helper provides user-friendly messages for all EndReason values
+  - sortPlayersByTeam groups players for reveal section (good first, then evil)
+  - Personal result shows if current player was on winning team - adds personal engagement

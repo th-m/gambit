@@ -962,7 +962,7 @@
         "Provides 'Return Home' button",
         "Celebration/defeat animation based on outcome"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-components-unit",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 86,
-    "completed_features": 59,
+    "completed_features": 60,
     "categories": {
       "functional": 68,
       "visual": 9,
