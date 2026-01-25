@@ -1320,7 +1320,7 @@
         "Enable replication for player_statuses table",
         "Verify real-time events fire correctly"
       ],
-      "passes": false
+      "passes": true
     }
   ],
   "metadata": {

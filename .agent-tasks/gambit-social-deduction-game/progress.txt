@@ -960,3 +960,19 @@
   - Service role bypasses RLS by default in Supabase - server-side operations have full access
   - REFERENCES with ON DELETE CASCADE ensures cleanup when parent records are deleted
   - COMMENT ON statements add documentation visible in Supabase dashboard
+
+---
+## 2026-01-25 - db-realtime-config
+- **What was implemented**: Supabase real-time replication for game tables with verification tests
+- **Files changed**: 
+  - `supabase/migrations/20260125000001_enable_realtime.sql` (created - real-time publication config)
+  - `supabase/realtime.test.ts` (created - 14 verification tests)
+- **Learnings:**
+  - Real-time replication uses `ALTER PUBLICATION supabase_realtime ADD TABLE tablename;` SQL command
+  - Separate migration file for real-time config keeps concerns separated from table creation
+  - Not all tables need real-time: game_modifiers and game_logs are server-side only, excluded from publication
+  - Real-time subscriptions still respect RLS policies - clients only receive events for rows they can SELECT
+  - Verification tests can parse migration file to confirm all required tables are included
+  - Manual verification: `SELECT tablename FROM pg_publication_tables WHERE pubname = 'supabase_realtime';`
+  - Hooks (useGameSubscription, useVoteSubscription) already set up to consume real-time events via postgres_changes
+  - Migration comments should include verification queries for post-deployment checks
