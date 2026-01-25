@@ -7,9 +7,9 @@
  * - Hides used one-time actions
  * - Displays action buttons with descriptions
  * - Integrates with TargetSelector when targets needed
- * - Submits action execution
- * - Shows confirmation/result
- * - Handles execution errors
+ * - Submits action execution with visual feedback
+ * - Shows confirmation/result with animations
+ * - Handles execution errors with shake effect
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -17,6 +17,7 @@ import { actionRegistry, getUsedActionIds } from '~/registry/ActionRegistry';
 import { characterRegistry } from '~/registry/CharacterRegistry';
 import { TargetSelector } from '~/components/TargetSelector';
 import { useEscapeKey, FOCUS_RING_CLASSES } from '~/hooks/useKeyboardNavigation';
+import { ACTION_KEYFRAMES, ANIMATION_DURATIONS, ANIMATION_EASINGS } from '~/utils/animations';
 import type {
   Player,
   Game,
@@ -68,14 +69,28 @@ function ActionButton({ action, onClick, disabled }: ActionButtonProps) {
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`w-full text-left p-3 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900 ${
-        disabled
+      className={`
+        w-full text-left p-3 rounded-lg transition-all duration-200
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900
+        ${disabled
           ? 'bg-stone-800 text-gray-600 cursor-not-allowed'
-          : 'bg-stone-700 hover:bg-stone-600 text-gray-200'
-      }`}
+          : 'bg-stone-700 hover:bg-stone-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-500/10 active:scale-[0.98] text-gray-200'
+        }
+      `}
     >
-      <p className="font-semibold text-amber-400">{action.name}</p>
-      <p className="text-sm text-gray-400 mt-1">{action.description}</p>
+      <div className="flex items-center gap-3">
+        <div className={`
+          shrink-0 w-8 h-8 rounded-lg flex items-center justify-center
+          ${disabled ? 'bg-stone-700' : 'bg-gradient-to-br from-amber-500/20 to-orange-500/20 group-hover:from-amber-500/30 group-hover:to-orange-500/30'}
+          transition-colors duration-200
+        `}>
+          <span className="text-lg">⚡</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-amber-400">{action.name}</p>
+          <p className="text-sm text-gray-400 mt-0.5 line-clamp-1">{action.description}</p>
+        </div>
+      </div>
     </button>
   );
 }
@@ -95,27 +110,77 @@ function ResultDisplay({ action, result, onDismiss }: ResultDisplayProps) {
   const bgColor = isSuccess ? 'bg-green-900/30' : 'bg-red-900/30';
   const borderColor = isSuccess ? 'border-green-700' : 'border-red-700';
   const textColor = isSuccess ? 'text-green-400' : 'text-red-400';
+  const iconColor = isSuccess ? 'text-green-500' : 'text-red-500';
+
+  // Animation style based on result
+  const animationStyle: React.CSSProperties = {
+    animation: isSuccess
+      ? `action-expand ${ANIMATION_DURATIONS.standard}ms ${ANIMATION_EASINGS.spring}, action-flash-success ${ANIMATION_DURATIONS.emphasis}ms ${ANIMATION_EASINGS.default}`
+      : `action-expand ${ANIMATION_DURATIONS.standard}ms ${ANIMATION_EASINGS.spring}, action-shake ${ANIMATION_DURATIONS.standard}ms ${ANIMATION_EASINGS.default}`,
+  };
 
   return (
-    <div className={`p-4 rounded-lg border ${bgColor} ${borderColor}`}>
-      <div className="flex items-start justify-between">
-        <div>
+    <div 
+      className={`p-4 rounded-lg border ${bgColor} ${borderColor} overflow-hidden`}
+      style={animationStyle}
+    >
+      {/* Impact burst effect on success */}
+      {isSuccess && (
+        <div 
+          className="absolute inset-0 bg-green-400/20 rounded-lg pointer-events-none"
+          style={{
+            animation: `impact-burst ${ANIMATION_DURATIONS.emphasis}ms ${ANIMATION_EASINGS.decelerate} forwards`,
+          }}
+        />
+      )}
+      
+      <div className="relative flex items-start gap-3">
+        {/* Result icon with animation */}
+        <div 
+          className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${isSuccess ? 'bg-green-900/50' : 'bg-red-900/50'}`}
+          style={{
+            animation: `action-expand ${ANIMATION_DURATIONS.standard}ms ${ANIMATION_EASINGS.spring} ${ANIMATION_DURATIONS.fast}ms both`,
+          }}
+        >
+          {isSuccess ? (
+            <svg className={`w-6 h-6 ${iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <svg className={`w-6 h-6 ${iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          )}
+        </div>
+        
+        <div className="flex-1 min-w-0">
           <p className={`font-semibold ${textColor}`}>
             {isSuccess ? 'Action Successful!' : 'Action Failed'}
           </p>
           <p className="text-sm text-gray-300 mt-1">{result.message}</p>
           {result.error && <p className="text-sm text-red-400 mt-1">{result.error}</p>}
           {result.gameEnded && result.winner && (
-            <p className="text-sm text-amber-400 mt-2">
-              Game Over! {result.winner === 'good' ? 'Good' : 'Evil'} team wins!
-            </p>
+            <div 
+              className="mt-2 px-3 py-2 rounded-lg bg-amber-900/30 border border-amber-600/30"
+              style={{
+                animation: `action-expand ${ANIMATION_DURATIONS.emphasis}ms ${ANIMATION_EASINGS.spring} ${ANIMATION_DURATIONS.standard}ms both`,
+              }}
+            >
+              <p className="text-sm text-amber-400 font-semibold">
+                🏆 Game Over! {result.winner === 'good' ? 'Good' : 'Evil'} team wins!
+              </p>
+            </div>
           )}
         </div>
       </div>
+      
       <button
         type="button"
         onClick={onDismiss}
-        className="mt-3 w-full py-2 px-3 rounded-lg bg-stone-700 text-gray-300 hover:bg-stone-600 transition-colors text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900"
+        className="mt-3 w-full py-2 px-3 rounded-lg bg-stone-700 text-gray-300 hover:bg-stone-600 transition-all duration-200 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900 active:scale-[0.98]"
+        style={{
+          animation: `fade-in-up ${ANIMATION_DURATIONS.standard}ms ${ANIMATION_EASINGS.decelerate} ${ANIMATION_DURATIONS.standard}ms both`,
+        }}
       >
         {result.gameEnded ? 'View Results' : 'Continue'}
       </button>
@@ -274,7 +339,10 @@ export function ActionPanel({
   }
 
   return (
-    <div className="bg-stone-800 rounded-xl p-4 border border-stone-700">
+    <div className="bg-stone-800 rounded-xl p-4 border border-stone-700 relative overflow-hidden">
+      {/* Inject animation keyframes */}
+      <style dangerouslySetInnerHTML={{ __html: ACTION_KEYFRAMES }} />
+      
       <h3 className="font-semibold mb-3 text-gray-300">Special Ability</h3>
 
       {/* Idle State - Show action buttons */}

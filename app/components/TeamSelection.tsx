@@ -6,16 +6,22 @@
  * 
  * Features:
  * - Player cards/tiles for selection
- * - Clear selected/unselected states
+ * - Clear selected/unselected states with animations
  * - Eliminated players visually distinct
  * - Current leader marked with crown
  * - Team members highlighted during mission
+ * - Selection pop and ripple animations
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type { Game, Player } from '~/types/game';
 import { getMissionSize } from '~/services/StateValidator';
 import { useKeyboardNavigation, FOCUS_RING_CLASSES } from '~/hooks/useKeyboardNavigation';
+import { 
+  SELECTION_KEYFRAMES, 
+  ANIMATION_DURATIONS,
+  ANIMATION_EASINGS,
+} from '~/utils/animations';
 
 // =============================================================================
 // Types
@@ -151,6 +157,8 @@ interface PlayerCardProps {
   canSelect: boolean;
   isAtLimit: boolean;
   onToggle: () => void;
+  // Animation state
+  animationState: 'none' | 'selecting' | 'deselecting';
   // Keyboard navigation props
   tabIndex?: number;
   'data-focused'?: boolean;
@@ -167,6 +175,7 @@ function PlayerCard({
   canSelect,
   isAtLimit,
   onToggle,
+  animationState,
   tabIndex,
   'data-focused': dataFocused,
   onFocus: onFocusNav,
@@ -178,16 +187,29 @@ function PlayerCard({
 
   // Determine card styling with focus-visible ring for keyboard navigation
   let cardClasses = `
-    relative p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center
+    relative p-4 rounded-xl border-2 flex flex-col items-center
     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900
+    transition-[background-color,border-color,opacity] duration-200
   `;
+
+  // Animation classes based on state
+  let animationStyle: React.CSSProperties = {};
+  if (animationState === 'selecting') {
+    animationStyle = {
+      animation: `selection-pop ${ANIMATION_DURATIONS.standard}ms ${ANIMATION_EASINGS.bounce}`,
+    };
+  } else if (animationState === 'deselecting') {
+    animationStyle = {
+      animation: `selection-pop ${ANIMATION_DURATIONS.fast}ms ${ANIMATION_EASINGS.default} reverse`,
+    };
+  }
 
   if (isEliminated) {
     cardClasses += ' bg-stone-900/50 border-stone-700 opacity-40 cursor-not-allowed';
   } else if (isSelected) {
-    cardClasses += ' bg-blue-900/40 border-blue-400 shadow-lg shadow-blue-500/25 transform scale-[1.03] ring-2 ring-blue-400/30 ring-offset-2 ring-offset-stone-900';
+    cardClasses += ' bg-blue-900/40 border-blue-400 shadow-lg shadow-blue-500/25 scale-[1.03] ring-2 ring-blue-400/30 ring-offset-2 ring-offset-stone-900';
   } else if (canBeSelected) {
-    cardClasses += ' bg-stone-800 border-stone-600 hover:border-blue-400/60 hover:bg-stone-700/80 cursor-pointer hover:shadow-md';
+    cardClasses += ' bg-stone-800 border-stone-600 hover:border-blue-400/60 hover:bg-stone-700/80 cursor-pointer hover:shadow-md hover:-translate-y-1 active:scale-[0.98]';
   } else {
     cardClasses += ' bg-stone-800/50 border-stone-700 opacity-50 cursor-not-allowed';
   }
@@ -200,14 +222,32 @@ function PlayerCard({
       aria-pressed={isSelected}
       aria-label={`${player.display_name}${isLeader ? ' (Leader)' : ''}${isSelected ? ' - Selected' : ''}${isEliminated ? ' - Eliminated' : ''}`}
       className={cardClasses}
+      style={animationStyle}
       tabIndex={tabIndex}
       data-focused={dataFocused}
       onFocus={onFocusNav}
       ref={itemRef}
     >
-      {/* Selection check badge */}
+      {/* Selection ripple effect */}
+      {animationState === 'selecting' && (
+        <div 
+          className="absolute inset-0 rounded-xl bg-blue-400/30 pointer-events-none"
+          style={{
+            animation: `selection-ripple ${ANIMATION_DURATIONS.emphasis}ms ${ANIMATION_EASINGS.decelerate} forwards`,
+          }}
+        />
+      )}
+
+      {/* Selection check badge with animation */}
       {isSelected && (
-        <div className="absolute -top-2.5 -left-2.5 w-7 h-7 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/40 z-10">
+        <div 
+          className="absolute -top-2.5 -left-2.5 w-7 h-7 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/40 z-10"
+          style={{
+            animation: animationState === 'selecting' 
+              ? `selection-check ${ANIMATION_DURATIONS.standard}ms ${ANIMATION_EASINGS.spring} forwards`
+              : undefined,
+          }}
+        >
           <CheckIcon className="h-4 w-4 text-white" />
         </div>
       )}
@@ -219,7 +259,7 @@ function PlayerCard({
         </div>
       )}
 
-      {/* Avatar */}
+      {/* Avatar with pulse on selection */}
       <div
         className={`
           w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg mb-2
@@ -228,6 +268,9 @@ function PlayerCard({
           ${isSelected ? 'ring-2 ring-white/30' : ''}
           transition-all duration-200
         `}
+        style={isSelected && animationState === 'selecting' ? {
+          animation: `action-pulse ${ANIMATION_DURATIONS.emphasis}ms ${ANIMATION_EASINGS.default}`,
+        } : undefined}
       >
         {isEliminated ? (
           <SkullIcon className="h-6 w-6" />
@@ -238,7 +281,7 @@ function PlayerCard({
 
       {/* Player name */}
       <p className={`
-        font-medium text-center truncate max-w-full
+        font-medium text-center truncate max-w-full transition-colors duration-200
         ${isEliminated ? 'text-gray-500 line-through' : ''}
         ${isSelected ? 'text-blue-200' : 'text-gray-200'}
       `}>
@@ -390,6 +433,9 @@ export function TeamSelection({ game, players, currentPlayer, onSelectTeam }: Te
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const lastClickRef = useRef<number>(0);
+  
+  // Track animation states for each player
+  const [animationStates, setAnimationStates] = useState<Record<string, 'none' | 'selecting' | 'deselecting'>>({});
 
   // Calculate leader and required team size
   const leader = getCurrentLeader(players, game.crown_index);
@@ -402,10 +448,30 @@ export function TeamSelection({ game, players, currentPlayer, onSelectTeam }: Te
     (a, b) => (a.seat_order ?? 0) - (b.seat_order ?? 0)
   );
 
-  // Toggle player selection
+  // Clear animation state after animation completes
+  useEffect(() => {
+    const animatingPlayers = Object.entries(animationStates).filter(([_, state]) => state !== 'none');
+    if (animatingPlayers.length === 0) return;
+
+    const timer = setTimeout(() => {
+      setAnimationStates({});
+    }, ANIMATION_DURATIONS.emphasis);
+
+    return () => clearTimeout(timer);
+  }, [animationStates]);
+
+  // Toggle player selection with animation
   const handleToggle = useCallback(
     (playerId: string) => {
       if (!isLeader) return;
+
+      const isCurrentlySelected = selectedIds.includes(playerId);
+      
+      // Set animation state
+      setAnimationStates((prev) => ({
+        ...prev,
+        [playerId]: isCurrentlySelected ? 'deselecting' : 'selecting',
+      }));
 
       setSelectedIds((prev) => {
         if (prev.includes(playerId)) {
@@ -417,7 +483,7 @@ export function TeamSelection({ game, players, currentPlayer, onSelectTeam }: Te
       });
       setError(null);
     },
-    [isLeader, requiredSize]
+    [isLeader, requiredSize, selectedIds]
   );
 
   // Handle keyboard selection
@@ -490,6 +556,8 @@ export function TeamSelection({ game, players, currentPlayer, onSelectTeam }: Te
 
   return (
     <div>
+      {/* Inject animation keyframes */}
+      <style dangerouslySetInnerHTML={{ __html: SELECTION_KEYFRAMES }} />
       {/* Header */}
       <div className="text-center mb-4">
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-yellow-900/30 border border-yellow-500/30 rounded-full mb-3">
@@ -520,6 +588,7 @@ export function TeamSelection({ game, players, currentPlayer, onSelectTeam }: Te
           const isCurrentPlayer = player.id === currentPlayer.id;
           const isEliminated = !player.is_alive;
           const itemProps = getItemProps(index);
+          const animationState = animationStates[player.id] || 'none';
 
           return (
             <PlayerCard
@@ -532,6 +601,7 @@ export function TeamSelection({ game, players, currentPlayer, onSelectTeam }: Te
               canSelect={!isSubmitting}
               isAtLimit={isAtLimit}
               onToggle={() => handleToggle(player.id)}
+              animationState={animationState}
               tabIndex={itemProps.tabIndex}
               data-focused={itemProps['data-focused']}
               onFocus={itemProps.onFocus}

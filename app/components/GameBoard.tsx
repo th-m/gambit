@@ -29,6 +29,11 @@ import {
   useScreenReaderAnnouncer,
   formatPhaseAnnouncement,
 } from '~/hooks/useScreenReaderAnnouncer';
+import { 
+  PHASE_TRANSITION_KEYFRAMES, 
+  ANIMATION_DURATIONS, 
+  ANIMATION_EASINGS,
+} from '~/utils/animations';
 import type {
   GamePhase,
   Player,
@@ -618,9 +623,10 @@ export function CharacterInfoPanel({
 interface PhaseIndicatorProps {
   phase: GamePhase | null;
   rejectionCount?: number;
+  animationKey?: string;
 }
 
-function PhaseIndicator({ phase, rejectionCount = 0 }: PhaseIndicatorProps) {
+function PhaseIndicator({ phase, rejectionCount = 0, animationKey }: PhaseIndicatorProps) {
   const config = phase ? PHASE_CONFIGS[phase] : null;
 
   if (!config) {
@@ -642,14 +648,25 @@ function PhaseIndicator({ phase, rejectionCount = 0 }: PhaseIndicatorProps) {
   return (
     <div className="mb-3 sm:mb-4 lg:mb-6">
       <div 
-        className={`rounded-lg sm:rounded-xl ${config.bgColor} border ${config.borderColor} p-2.5 sm:p-3 md:p-4 transition-all duration-300`}
+        key={animationKey}
+        className={`rounded-lg sm:rounded-xl ${config.bgColor} border ${config.borderColor} p-2.5 sm:p-3 md:p-4`}
+        style={{
+          animation: `phase-enter ${ANIMATION_DURATIONS.emphasis}ms ${ANIMATION_EASINGS.decelerate} forwards`,
+        }}
         role="status"
         aria-label={accessibleDescription}
       >
         <div className="flex items-center justify-between gap-2 sm:gap-3">
           {/* Phase info */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-            <span className="text-lg sm:text-xl md:text-2xl shrink-0" role="img" aria-hidden="true">
+            <span 
+              className="text-lg sm:text-xl md:text-2xl shrink-0" 
+              role="img" 
+              aria-hidden="true"
+              style={{
+                animation: `action-expand ${ANIMATION_DURATIONS.standard}ms ${ANIMATION_EASINGS.spring} ${ANIMATION_DURATIONS.fast}ms both`,
+              }}
+            >
               {config.icon}
             </span>
             <div className="min-w-0 flex-1">
@@ -665,7 +682,9 @@ function PhaseIndicator({ phase, rejectionCount = 0 }: PhaseIndicatorProps) {
           {/* Rejection counter (only during leader voting) */}
           {phase === 'voting_for_leader' && rejectionCount > 0 && (
             <div 
-              className="shrink-0 flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg bg-orange-500/20 border border-orange-500/30"
+              className={`shrink-0 flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg bg-orange-500/20 border border-orange-500/30 ${
+                rejectionCount === 2 ? 'animate-pulse' : ''
+              }`}
               aria-label={`${rejectionCount} of 3 rejections${rejectionCount === 2 ? ', final chance' : ''}`}
             >
               <span className="text-orange-400 text-[10px] sm:text-xs md:text-sm font-medium tabular-nums" aria-hidden="true">
@@ -755,6 +774,8 @@ export interface GameBoardProps {
 export function GameBoard({ renderPhase }: GameBoardProps) {
   const { game, players, actions, ctx, currentPlayer, isLoading, error, executeAction } = useGameFlow();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [phaseAnimationKey, setPhaseAnimationKey] = useState<string>(`phase-${Date.now()}`);
+  const [contentAnimationKey, setContentAnimationKey] = useState<string>(`content-${Date.now()}`);
   
   // Screen reader announcer for accessibility
   const { announcePolite, announceAssertive, AnnouncerRegion } = useScreenReaderAnnouncer();
@@ -763,7 +784,7 @@ export function GameBoard({ renderPhase }: GameBoardProps) {
   const prevPhaseRef = useRef<GamePhase | null>(null);
   const prevRoundRef = useRef<number | null>(null);
 
-  // Announce phase changes for screen readers
+  // Announce phase changes for screen readers and trigger animations
   useEffect(() => {
     if (!game) return;
     
@@ -786,6 +807,10 @@ export function GameBoard({ renderPhase }: GameBoardProps) {
         announcePolite(announcement);
       }
       
+      // Trigger animation by updating keys
+      setPhaseAnimationKey(`phase-${currentPhase}-${Date.now()}`);
+      setContentAnimationKey(`content-${currentPhase}-${Date.now()}`);
+      
       prevPhaseRef.current = currentPhase;
     }
     
@@ -793,6 +818,8 @@ export function GameBoard({ renderPhase }: GameBoardProps) {
     if (currentRound !== prevRoundRef.current && prevRoundRef.current !== null) {
       if (currentRound > prevRoundRef.current) {
         announcePolite(`Starting round ${currentRound}.`);
+        // Trigger content animation for new round
+        setContentAnimationKey(`content-round-${currentRound}-${Date.now()}`);
       }
     }
     prevRoundRef.current = currentRound;
@@ -899,6 +926,16 @@ export function GameBoard({ renderPhase }: GameBoardProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-stone-900 via-stone-900 to-stone-950 text-white overflow-x-hidden">
+      {/* Inject animation keyframes */}
+      <style dangerouslySetInnerHTML={{ __html: PHASE_TRANSITION_KEYFRAMES }} />
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes action-expand {
+          0% { transform: scale(0.8); opacity: 0; }
+          60% { transform: scale(1.1); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}} />
+      
       {/* Screen reader live regions for announcements */}
       <AnnouncerRegion />
       
@@ -932,8 +969,12 @@ export function GameBoard({ renderPhase }: GameBoardProps) {
         {/* Score Board */}
         <ScoreBoard game={game} />
 
-        {/* Phase Indicator with rejection count */}
-        <PhaseIndicator phase={game.phase as GamePhase} rejectionCount={game.rejection_count ?? 0} />
+        {/* Phase Indicator with rejection count and animation */}
+        <PhaseIndicator 
+          phase={game.phase as GamePhase} 
+          rejectionCount={game.rejection_count ?? 0}
+          animationKey={phaseAnimationKey}
+        />
 
         {/* Main Game Area - Responsive Grid
             Mobile (<768px): Single column, phase content first
@@ -958,7 +999,11 @@ export function GameBoard({ renderPhase }: GameBoardProps) {
                 )}
               </div>
               <div 
+                key={contentAnimationKey}
                 className="p-4 sm:p-5 lg:p-6 min-h-[260px] sm:min-h-[300px] lg:min-h-[340px] flex items-center justify-center"
+                style={{
+                  animation: `phase-enter ${ANIMATION_DURATIONS.emphasis}ms ${ANIMATION_EASINGS.decelerate} forwards`,
+                }}
                 aria-live="polite"
                 aria-atomic="false"
               >
