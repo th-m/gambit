@@ -541,3 +541,19 @@
   - Real-time INSERT events must re-validate round, phase, and action type before updating local state
   - `renderHook` from @testing-library/react is cleaner for testing hooks than wrapping in consumer components
   - Supabase `.in()` query filter used to fetch only vote-related actions in one query
+
+---
+## 2026-01-25 - hook-vote-completion
+- **What was implemented**: useVoteCompletion hook for monitoring vote completion and triggering server processing
+- **Files changed**: 
+  - `app/hooks/useVoteCompletion.ts` (created)
+  - `app/hooks/useVoteCompletion.test.ts` (created - 31 unit tests)
+- **Learnings:**
+  - Expected voter count differs by phase: leader voting = all alive players, mission voting = selected team size
+  - Use refs (`hasTriggeredRef`, `lastPhaseRef`, `lastRoundRef`) to track trigger state without causing re-renders
+  - Debounce pattern uses `setTimeout` with cleanup in effect return to prevent stale triggers
+  - Reset trigger state when phase OR round changes - critical for allowing new completions in new voting contexts
+  - When round changes but votes remain the same (in tests), add `currentRound` to callback dependencies to force effect re-run
+  - `vi.useFakeTimers()` and `vi.advanceTimersByTime()` essential for testing debounce behavior
+  - Hook returns both state (`isComplete`, `voteCount`, `expectedCount`) and method (`checkCompletion`) for flexibility
+  - Use `enabled` option to disable auto-triggering while still computing completion state

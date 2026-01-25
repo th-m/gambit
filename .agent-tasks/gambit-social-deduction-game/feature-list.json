@@ -662,7 +662,7 @@
         "Handles mission voting completion",
         "Debounces to prevent duplicate triggers"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "hook-vibration",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 85,
-    "completed_features": 36,
+    "completed_features": 37,
     "categories": {
       "functional": 68,
       "visual": 9,
