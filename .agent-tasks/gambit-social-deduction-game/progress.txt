@@ -1133,3 +1133,48 @@
   - Integration tests that call rate-limited routes need to clear rate limiters in `beforeEach`/`afterEach`
   - Default limits: game creation 5/min, votes 10/10s, actions 5/10s - balance between spam prevention and normal use
   - Cleanup interval prevents memory leaks in long-running servers - runs every 60s to remove expired entries
+
+---
+## 2026-01-25 - a11y-keyboard-navigation
+- **What was implemented**: Comprehensive keyboard navigation accessibility for game interface
+- **Files changed**: 
+  - `app/hooks/useKeyboardNavigation.ts` (created - reusable keyboard navigation hook)
+  - `app/hooks/useKeyboardNavigation.test.ts` (created - 29 unit tests)
+  - `app/components/PlayerList.tsx` (updated - arrow keys, focus rings, listbox role)
+  - `app/components/TeamSelection.tsx` (updated - arrow keys, focus rings)
+  - `app/components/TargetSelector.tsx` (updated - arrow keys, escape key, focus rings)
+  - `app/components/ActionPanel.tsx` (updated - escape key to close target selector, focus rings)
+  - `app/components/PlayerList.test.tsx` (updated - fixed test for role change)
+- **Learnings:**
+  - `useKeyboardNavigation` hook provides reusable grid navigation with configurable columns, wrap-around, and selection callbacks
+  - Use `focus-visible:ring-*` classes instead of `focus:ring-*` for keyboard-only focus indicators (doesn't show on mouse click)
+  - `useEscapeKey` hook provides global escape key listener with enable/disable support and proper cleanup
+  - Arrow key navigation uses row/column calculation from index: `row = floor(index / columns)`, `col = index % columns`
+  - Tab order managed via `tabIndex: 0` for focused item, `tabIndex: -1` for others - only one item in grid is tabbable
+  - Changed `role="group"` to `role="listbox"` with `aria-multiselectable` for multi-selection interfaces - better semantics
+  - Pass keyboard nav props through component hierarchy: `tabIndex`, `data-focused`, `onFocus`, `ref` callback
+  - Home/End keys navigate to first/last item - common keyboard navigation pattern
+  - Screen reader instructions added via `sr-only` class explaining keyboard controls
+  - `useRef` for tracking focused index avoids re-renders during rapid keyboard navigation
+
+---
+## 2026-01-25 - a11y-screen-reader
+- **What was implemented**: Comprehensive screen reader support for game interface using ARIA live regions
+- **Files changed**: 
+  - `app/hooks/useScreenReaderAnnouncer.tsx` (created - hook for managing live region announcements)
+  - `app/hooks/useScreenReaderAnnouncer.test.tsx` (created - 35 unit tests)
+  - `app/components/GameBoard.tsx` (updated - phase change announcements, ARIA labels)
+  - `app/components/LeaderVoting.tsx` (updated - vote result announcements, error announcements)
+  - `app/components/MissionVoting.tsx` (updated - mission result announcements, error announcements)
+  - `app/components/AssassinationPhase.tsx` (updated - game over announcements, ARIA labels)
+- **Learnings:**
+  - Use `.tsx` extension for hooks that return React components (JSX in the return value)
+  - ARIA live regions with `aria-live="polite"` won't interrupt current announcements; `aria-live="assertive"` will
+  - Clear message before setting new one (with small delay) helps screen readers detect changes
+  - Deduplication prevents rapid identical announcements within a configurable time window
+  - `role="status"` for polite regions, `role="alert"` for assertive regions provide semantic meaning
+  - Helper functions for common announcements (phase, vote results, turn, game over) ensure consistent formatting
+  - `AnnouncerRegion` component renders visually hidden live regions using `sr-only` class
+  - Components should have `aria-label` on regions and `aria-busy` during loading states
+  - Phase descriptions should include context like rejection count and consequences ("Final chance before automatic evil point")
+  - Announcing errors via assertive live region ensures users know when actions fail
