@@ -918,7 +918,7 @@
         "Shows mission results for completed rounds",
         "Visual indication of progress toward victory"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "component-player-list",
@@ -933,7 +933,7 @@
         "Optional: shows alive/dead status",
         "Supports selectable mode for team/target selection"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "component-vote-results",
@@ -1325,7 +1325,7 @@
   ],
   "metadata": {
     "total_features": 86,
-    "completed_features": 56,
+    "completed_features": 58,
     "categories": {
       "functional": 68,
       "visual": 9,

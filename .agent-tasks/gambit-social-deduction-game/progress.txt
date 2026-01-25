@@ -846,3 +846,31 @@
   - Unreliable info detection: check if knownPlayerLabels contain "?" (e.g., "Seer?") to show warning
   - Color coding for labels: red for evil players, purple for Seer candidates, neutral for others
   - CharacterDefinition.description provides the base description, CharacterInfo.description from resolveInfo provides contextual info about what they know
+
+---
+## 2026-01-25 - component-scoreboard
+- **What was implemented**: Fixed ScoreBoard round result display logic
+- **Files changed**: 
+  - `app/components/GameBoard.tsx` (updated - fixed round result calculation)
+- **Learnings:**
+  - ScoreBoard already existed with most functionality - just needed bug fix
+  - Previous logic `round <= evil_victories && !isGoodWin` didn't account for good wins offsetting round numbers
+  - Correct approach: past rounds that aren't good wins must be evil wins (since past = good + evil victories)
+  - Game type doesn't track per-round results, only total victories - visual representation shows first N as good, rest as evil
+
+---
+## 2026-01-25 - component-player-list
+- **What was implemented**: Extracted PlayerList to standalone component with selectable mode for team/target selection
+- **Files changed**: 
+  - `app/components/PlayerList.tsx` (created - standalone component)
+  - `app/components/PlayerList.test.tsx` (created - 28 unit tests)
+  - `app/components/GameBoard.tsx` (updated - imports PlayerList)
+- **Learnings:**
+  - Extract embedded components when they have reusable value (PlayerList used in GameBoard sidebar, could be used elsewhere)
+  - Selectable mode requires: selectedIds, onSelectPlayer callback, optional canSelect filter and maxSelections
+  - Default canSelect to `is_alive` check - most selection scenarios only allow selecting alive players
+  - Use button element for selectable mode, div for non-selectable - better semantics and accessibility
+  - `aria-pressed` attribute on buttons indicates toggle state for screen readers
+  - Keyboard support: Enter and Space keys should trigger selection (via onKeyDown handler)
+  - PlayerItem sub-component keeps main component clean - separate presentation logic from list management
+  - Component tests in jsdom environment should use standard vitest assertions (toBeTruthy, toBeNull) not jest-dom matchers
