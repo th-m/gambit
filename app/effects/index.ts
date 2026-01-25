@@ -5,25 +5,29 @@
  * all perception effects with the EffectRegistry singleton.
  */
 
-export {
+import {
   appearsAsSeerEffect,
   registerAppearsAsSeerEffect,
 } from './appearsAsSeer';
 
-export {
+import {
   appearsAsGoodEffect,
   registerAppearsAsGoodEffect,
 } from './appearsAsGood';
+
+// Re-export for consumers
+export {
+  appearsAsSeerEffect,
+  registerAppearsAsSeerEffect,
+  appearsAsGoodEffect,
+  registerAppearsAsGoodEffect,
+};
 
 /**
  * Register all perception effects with the EffectRegistry singleton.
  * Call this during app initialization, before character info resolution.
  */
 export function registerAllEffects(): void {
-  // Import and call individual registration functions
-  const { registerAppearsAsSeerEffect } = require('./appearsAsSeer');
-  const { registerAppearsAsGoodEffect } = require('./appearsAsGood');
-  
   registerAppearsAsSeerEffect();
   registerAppearsAsGoodEffect();
 }
