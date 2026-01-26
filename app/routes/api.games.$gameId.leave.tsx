@@ -6,7 +6,6 @@
  */
 
 import { createClient } from '~/lib/supabase/server';
-import { gameService } from '~/services/GameService';
 import type { ActionFunctionArgs } from 'react-router';
 
 interface LeaveGameResponse {
@@ -43,9 +42,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // Check game exists
-  const game = gameService.getGameById(gameId);
-  if (!game) {
+  // Check game exists in Supabase
+  const { data: game, error: gameError } = await supabase
+    .from('gambit_games')
+    .select('*')
+    .eq('id', gameId)
+    .single();
+
+  if (gameError || !game) {
     return new Response(
       JSON.stringify({ error: 'Game not found' } satisfies ErrorResponse),
       {
@@ -67,7 +71,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Check if user is in the game
-  const player = gameService.getPlayer(gameId, user.id);
+  const { data: player } = await supabase
+    .from('gambit_game_players')
+    .select('*')
+    .eq('game_id', gameId)
+    .eq('user_id', user.id)
+    .single();
+
   if (!player) {
     return new Response(
       JSON.stringify({ error: 'You are not in this game' } satisfies ErrorResponse),
@@ -89,8 +99,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // Remove the player
-  gameService.removePlayer(gameId, user.id);
+  // Remove the player from Supabase
+  const { error: deleteError } = await supabase
+    .from('gambit_game_players')
+    .delete()
+    .eq('game_id', gameId)
+    .eq('user_id', user.id);
+
+  if (deleteError) {
+    console.error('Error removing player:', deleteError);
+    return new Response(
+      JSON.stringify({ error: 'Failed to leave game' } satisfies ErrorResponse),
+      {
+        status: 500,
+        headers: { ...Object.fromEntries(headers.entries()), 'Content-Type': 'application/json' },
+      }
+    );
+  }
 
   const response: LeaveGameResponse = {
     success: true,

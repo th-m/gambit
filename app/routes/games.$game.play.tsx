@@ -12,7 +12,6 @@ import type { LoaderFunctionArgs } from 'react-router';
 import { createClient } from '~/lib/supabase/server';
 import { useEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router';
-import { gameService } from '~/services/GameService';
 import { GameFlowProvider, useGameFlow } from '~/contexts/GameFlowContext';
 import { GameLoadingSkeleton, LoadingSpinner } from '~/components/RouteLoadingIndicator';
 import type { Game, Player, GamePhase } from '~/types/game';
@@ -60,23 +59,33 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     return { game: null, players: [], currentUserId: null, error: 'Authentication required' };
   }
 
-  // Get game from GameService
-  const game = gameService.getGameById(gameId);
-  if (!game) {
+  // Get game from Supabase
+  const { data: game, error: gameError } = await supabase
+    .from('gambit_games')
+    .select('*')
+    .eq('id', gameId)
+    .single();
+
+  if (gameError || !game) {
     return { game: null, players: [], currentUserId: user.id, error: 'Game not found' };
   }
 
-  const players = gameService.getPlayers(gameId);
+  // Get players from Supabase
+  const { data: players } = await supabase
+    .from('gambit_game_players')
+    .select('*')
+    .eq('game_id', gameId)
+    .order('seat_order', { ascending: true, nullsFirst: false });
 
   // Check if user is in the game
-  const isInGame = players.some((p) => p.user_id === user.id);
+  const isInGame = (players ?? []).some((p) => p.user_id === user.id);
   if (!isInGame) {
     return { game: null, players: [], currentUserId: user.id, error: 'You are not in this game' };
   }
 
   return {
     game,
-    players,
+    players: players ?? [],
     currentUserId: user.id,
   };
 }

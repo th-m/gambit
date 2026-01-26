@@ -224,15 +224,15 @@ export function GameFlowProvider({
     try {
       // Fetch all data in parallel for efficiency
       const [gameResult, playersResult, actionsResult, modifiersResult, statusesResult] = await Promise.all([
-        supabase.from('games').select('*').eq('id', gameId).single(),
+        supabase.from('gambit_games').select('*').eq('id', gameId).single(),
         supabase
-          .from('players')
+          .from('gambit_game_players')
           .select('*')
           .eq('game_id', gameId)
           .order('seat_order', { ascending: true, nullsFirst: false }),
-        supabase.from('game_actions').select('*').eq('game_id', gameId),
-        supabase.from('game_modifiers').select('*').eq('game_id', gameId),
-        supabase.from('player_statuses').select('*').eq('game_id', gameId),
+        supabase.from('gambit_game_actions').select('*').eq('game_id', gameId),
+        supabase.from('gambit_game_modifiers').select('*').eq('game_id', gameId),
+        supabase.from('gambit_player_statuses').select('*').eq('game_id', gameId),
       ]);
 
       // Check if aborted
@@ -380,7 +380,7 @@ export function GameFlowProvider({
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'games',
+          table: 'gambit_games',
           filter: `id=eq.${gameId}`,
         },
         (payload) => {
@@ -397,13 +397,13 @@ export function GameFlowProvider({
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'players',
+          table: 'gambit_game_players',
           filter: `game_id=eq.${gameId}`,
         },
         async () => {
           // Refetch all players to maintain correct order
           const { data } = await supabase
-            .from('players')
+            .from('gambit_game_players')
             .select('*')
             .eq('game_id', gameId)
             .order('seat_order', { ascending: true, nullsFirst: false });
@@ -418,7 +418,7 @@ export function GameFlowProvider({
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'players',
+          table: 'gambit_game_players',
           filter: `game_id=eq.${gameId}`,
         },
         (payload) => {
@@ -430,7 +430,7 @@ export function GameFlowProvider({
         {
           event: 'DELETE',
           schema: 'public',
-          table: 'players',
+          table: 'gambit_game_players',
           filter: `game_id=eq.${gameId}`,
         },
         (payload) => {
@@ -447,7 +447,7 @@ export function GameFlowProvider({
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'game_actions',
+          table: 'gambit_game_actions',
           filter: `game_id=eq.${gameId}`,
         },
         (payload) => {
@@ -464,13 +464,13 @@ export function GameFlowProvider({
         {
           event: '*',
           schema: 'public',
-          table: 'player_statuses',
+          table: 'gambit_player_statuses',
           filter: `game_id=eq.${gameId}`,
         },
         async () => {
           // Refetch all statuses
           const { data } = await supabase
-            .from('player_statuses')
+            .from('gambit_player_statuses')
             .select('*')
             .eq('game_id', gameId);
 

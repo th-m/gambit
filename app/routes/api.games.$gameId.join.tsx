@@ -5,8 +5,8 @@
 
 import type { ActionFunctionArgs } from 'react-router';
 import { createClient } from '~/lib/supabase/server';
-import { gameService } from '~/services/GameService';
-import { stateValidator, MAX_PLAYERS } from '~/services/StateValidator';
+
+const MAX_PLAYERS = 10;
 
 /**
  * Request body schema for joining a game.
@@ -74,40 +74,96 @@ export async function action({ request, params }: ActionFunctionArgs): Promise<R
       );
     }
 
-    // Check if game exists
-    const game = gameService.getGameById(gameId);
-    if (!game) {
+    // Check if game exists in Supabase
+    const { data: game, error: gameError } = await supabase
+      .from('gambit_games')
+      .select('*')
+      .eq('id', gameId)
+      .single();
+
+    if (gameError || !game) {
       return new Response(
         JSON.stringify({ error: 'Game not found' } satisfies ErrorResponse),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // Validate that user can join
-    const validation = stateValidator.validateJoinGame(gameId, user.id);
-    if (!validation.valid) {
-      // Determine status code based on error type
-      let status = 400;
-      if (validation.error === 'Game not found') {
-        status = 404;
-      }
-      
+    // Check if game is in lobby status
+    if (game.status !== 'lobby') {
       return new Response(
-        JSON.stringify({ error: validation.error ?? 'Cannot join game' } satisfies ErrorResponse),
-        { status, headers: { 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Game has already started' } satisfies ErrorResponse),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // Add player to game (handles graceful duplicate join)
-    const player = gameService.addPlayer(gameId, user.id, displayName);
+    // Check if user is already in the game
+    const { data: existingPlayer } = await supabase
+      .from('gambit_game_players')
+      .select('*')
+      .eq('game_id', gameId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (existingPlayer) {
+      // Return existing player instead of error (graceful handling)
+      const response: JoinGameResponse = {
+        player: {
+          id: existingPlayer.id,
+          game_id: existingPlayer.game_id,
+          user_id: existingPlayer.user_id,
+          display_name: existingPlayer.display_name,
+        },
+      };
+
+      const responseHeaders = new Headers(headers);
+      responseHeaders.set('Content-Type', 'application/json');
+
+      return new Response(JSON.stringify(response), {
+        status: 200,
+        headers: responseHeaders,
+      });
+    }
+
+    // Check player count
+    const { count: playerCount } = await supabase
+      .from('gambit_game_players')
+      .select('*', { count: 'exact', head: true })
+      .eq('game_id', gameId);
+
+    if ((playerCount ?? 0) >= MAX_PLAYERS) {
+      return new Response(
+        JSON.stringify({ error: 'Game is full' } satisfies ErrorResponse),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Insert new player into Supabase
+    const { data: newPlayer, error: insertError } = await supabase
+      .from('gambit_game_players')
+      .insert({
+        game_id: gameId,
+        user_id: user.id,
+        display_name: displayName,
+        is_alive: true,
+      })
+      .select()
+      .single();
+
+    if (insertError || !newPlayer) {
+      console.error('Error inserting player:', insertError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to join game' } satisfies ErrorResponse),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Build response
     const response: JoinGameResponse = {
       player: {
-        id: player.id,
-        game_id: player.game_id,
-        user_id: player.user_id,
-        display_name: player.display_name,
+        id: newPlayer.id,
+        game_id: newPlayer.game_id,
+        user_id: newPlayer.user_id,
+        display_name: newPlayer.display_name,
       },
     };
 
@@ -125,17 +181,9 @@ export async function action({ request, params }: ActionFunctionArgs): Promise<R
     // Handle specific error cases
     const errorMessage = error instanceof Error ? error.message : 'Failed to join game';
     
-    // Map error messages to appropriate status codes
-    let status = 500;
-    if (errorMessage === 'Game not found') {
-      status = 404;
-    } else if (errorMessage === 'Game has already started' || errorMessage === 'Game is full') {
-      status = 400;
-    }
-
     return new Response(
       JSON.stringify({ error: errorMessage } satisfies ErrorResponse),
-      { status, headers: { 'Content-Type': 'application/json' } }
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }

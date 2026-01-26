@@ -5,9 +5,11 @@
 
 import type { ActionFunctionArgs } from 'react-router';
 import { createClient } from '~/lib/supabase/server';
-import { gameService } from '~/services/GameService';
-import { stateValidator, MIN_PLAYERS, MAX_PLAYERS } from '~/services/StateValidator';
 import { assignCharacters } from '~/utils/characterAssignment';
+import type { Player } from '~/types/game';
+
+const MIN_PLAYERS = 5;
+const MAX_PLAYERS = 10;
 
 /**
  * Response schema for successful game start.
@@ -59,9 +61,14 @@ export async function action({ request, params }: ActionFunctionArgs): Promise<R
   }
 
   try {
-    // Check if game exists
-    const game = gameService.getGameById(gameId);
-    if (!game) {
+    // Check if game exists in Supabase
+    const { data: game, error: gameError } = await supabase
+      .from('gambit_games')
+      .select('*')
+      .eq('id', gameId)
+      .single();
+
+    if (gameError || !game) {
       return new Response(
         JSON.stringify({ error: 'Game not found' } satisfies ErrorResponse),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
@@ -69,22 +76,35 @@ export async function action({ request, params }: ActionFunctionArgs): Promise<R
     }
 
     // Validate user is the host
-    const validation = stateValidator.validateGameStart(gameId, user.id);
-    if (!validation.valid) {
-      // Determine status code based on error type
-      let status = 400;
-      if (validation.error?.includes('Only the host')) {
-        status = 403;
-      }
-      
+    if (game.host_id !== user.id) {
       return new Response(
-        JSON.stringify({ error: validation.error ?? 'Cannot start game' } satisfies ErrorResponse),
-        { status, headers: { 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Only the host can start the game' } satisfies ErrorResponse),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate game is in lobby status
+    if (game.status !== 'lobby') {
+      return new Response(
+        JSON.stringify({ error: 'Game has already started' } satisfies ErrorResponse),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
     // Get players and validate count
-    const players = gameService.getPlayers(gameId);
+    const { data: players, error: playersError } = await supabase
+      .from('gambit_game_players')
+      .select('*')
+      .eq('game_id', gameId)
+      .order('created_at', { ascending: true });
+
+    if (playersError || !players) {
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch players' } satisfies ErrorResponse),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     const playerCount = players.length;
 
     if (playerCount < MIN_PLAYERS || playerCount > MAX_PLAYERS) {
@@ -97,23 +117,40 @@ export async function action({ request, params }: ActionFunctionArgs): Promise<R
     }
 
     // Assign characters to players
-    const { playerUpdates, crownIndex } = assignCharacters(players);
+    const { playerUpdates, crownIndex } = assignCharacters(players as Player[]);
 
-    // Apply player updates
+    // Apply player updates in Supabase
     for (const { playerId, update } of playerUpdates) {
-      gameService.updatePlayer(playerId, update);
+      const { error: updateError } = await supabase
+        .from('gambit_game_players')
+        .update(update)
+        .eq('id', playerId);
+
+      if (updateError) {
+        console.error('Error updating player:', updateError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to assign characters' } satisfies ErrorResponse),
+          { status: 500, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
-    // Update game state
-    const updatedGame = gameService.updateGame(gameId, {
-      status: 'playing',
-      phase: 'voting_for_leader',
-      current_round: 1,
-      crown_index: crownIndex,
-      rejection_count: 0,
-    });
+    // Update game state in Supabase
+    const { data: updatedGame, error: updateGameError } = await supabase
+      .from('gambit_games')
+      .update({
+        status: 'playing',
+        phase: 'voting_for_leader',
+        current_round: 1,
+        crown_index: crownIndex,
+        rejection_count: 0,
+      })
+      .eq('id', gameId)
+      .select()
+      .single();
 
-    if (!updatedGame) {
+    if (updateGameError || !updatedGame) {
+      console.error('Error updating game:', updateGameError);
       return new Response(
         JSON.stringify({ error: 'Failed to update game state' } satisfies ErrorResponse),
         { status: 500, headers: { 'Content-Type': 'application/json' } }

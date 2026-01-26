@@ -14,7 +14,6 @@ import { createClient } from '~/lib/supabase/server';
 import { createClient as createBrowserClient } from '~/lib/supabase/client';
 import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { Link } from 'react-router';
-import { gameService } from '~/services/GameService';
 import { useGameApi } from '~/hooks/useGameApi';
 import { LobbyLoadingSkeleton } from '~/components/RouteLoadingIndicator';
 import type { Game, Player } from '~/types/game';
@@ -40,17 +39,27 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   // Get current user
   const { data: { user } } = await supabase.auth.getUser();
   
-  // Get game from GameService
-  const game = gameService.getGameById(gameId);
-  if (!game) {
+  // Get game from Supabase
+  const { data: game, error: gameError } = await supabase
+    .from('gambit_games')
+    .select('*')
+    .eq('id', gameId)
+    .single();
+
+  if (gameError || !game) {
     return { game: null, players: [], currentUserId: user?.id ?? null, error: 'Game not found' };
   }
 
-  const players = gameService.getPlayers(gameId);
+  // Get players from Supabase
+  const { data: players } = await supabase
+    .from('gambit_game_players')
+    .select('*')
+    .eq('game_id', gameId)
+    .order('seat_order', { ascending: true, nullsFirst: false });
 
   return { 
     game, 
-    players,
+    players: players ?? [],
     currentUserId: user?.id ?? null,
   };
 }
@@ -132,7 +141,7 @@ export default function GameLobbyPage() {
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: 'games',
+        table: 'gambit_games',
         filter: `id=eq.${gameId}`
       }, (payload) => {
         const newGame = payload.new as Game;
@@ -151,12 +160,19 @@ export default function GameLobbyPage() {
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: 'players',
+        table: 'gambit_game_players',
         filter: `game_id=eq.${gameId}`
-      }, () => {
-        // Refetch players to get updated list with correct sorting
-        const updatedPlayers = gameService.getPlayers(gameId);
-        setPlayers(updatedPlayers);
+      }, async () => {
+        // Refetch players from Supabase to get updated list with correct sorting
+        const { data: updatedPlayers } = await supabase
+          .from('gambit_game_players')
+          .select('*')
+          .eq('game_id', gameId)
+          .order('seat_order', { ascending: true, nullsFirst: false });
+        
+        if (updatedPlayers) {
+          setPlayers(updatedPlayers as Player[]);
+        }
       })
       .subscribe();
     

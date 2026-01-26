@@ -4,7 +4,7 @@
  */
 
 import type { LoaderFunctionArgs } from 'react-router';
-import { gameService } from '~/services/GameService';
+import { createClient } from '~/lib/supabase/server';
 
 /**
  * Response schema for successful lookup.
@@ -43,10 +43,15 @@ export async function loader({ request }: LoaderFunctionArgs): Promise<Response>
     );
   }
 
-  // Look up game by key
-  const game = gameService.getGameByKey(gameKey);
+  // Look up game by key in Supabase (case insensitive)
+  const { supabase } = createClient(request);
+  const { data: game, error: gameError } = await supabase
+    .from('gambit_games')
+    .select('*')
+    .ilike('game_key', gameKey)
+    .single();
 
-  if (!game) {
+  if (gameError || !game) {
     return new Response(
       JSON.stringify({ error: 'Game not found' } satisfies ErrorResponse),
       { status: 404, headers: { 'Content-Type': 'application/json' } }

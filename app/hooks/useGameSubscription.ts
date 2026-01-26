@@ -180,14 +180,14 @@ export function useGameSubscription(
     try {
       // Fetch all data in parallel for efficiency
       const [gameResult, playersResult, actionsResult] = await Promise.all([
-        supabase.from('games').select('*').eq('id', gameId).single(),
+        supabase.from('gambit_games').select('*').eq('id', gameId).single(),
         supabase
-          .from('players')
+          .from('gambit_game_players')
           .select('*')
           .eq('game_id', gameId)
           .order('seat_order', { ascending: true, nullsFirst: false }),
         supabase
-          .from('game_actions')
+          .from('gambit_game_actions')
           .select('*')
           .eq('game_id', gameId)
           .order('created_at', { ascending: true }),
@@ -327,7 +327,7 @@ export function useGameSubscription(
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'games',
+          table: 'gambit_games',
           filter: `id=eq.${gameId}`,
         },
         (payload) => {
@@ -339,7 +339,7 @@ export function useGameSubscription(
         {
           event: 'DELETE',
           schema: 'public',
-          table: 'games',
+          table: 'gambit_games',
           filter: `id=eq.${gameId}`,
         },
         () => {
@@ -356,13 +356,13 @@ export function useGameSubscription(
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'players',
+          table: 'gambit_game_players',
           filter: `game_id=eq.${gameId}`,
         },
         async () => {
           // Refetch to maintain correct sort order
           const { data } = await supabase
-            .from('players')
+            .from('gambit_game_players')
             .select('*')
             .eq('game_id', gameId)
             .order('seat_order', { ascending: true, nullsFirst: false });
@@ -376,7 +376,7 @@ export function useGameSubscription(
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'players',
+          table: 'gambit_game_players',
           filter: `game_id=eq.${gameId}`,
         },
         (payload) => {
@@ -388,7 +388,7 @@ export function useGameSubscription(
         {
           event: 'DELETE',
           schema: 'public',
-          table: 'players',
+          table: 'gambit_game_players',
           filter: `game_id=eq.${gameId}`,
         },
         (payload) => {
@@ -405,7 +405,7 @@ export function useGameSubscription(
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'game_actions',
+          table: 'gambit_game_actions',
           filter: `game_id=eq.${gameId}`,
         },
         (payload) => {
@@ -417,7 +417,7 @@ export function useGameSubscription(
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'game_actions',
+          table: 'gambit_game_actions',
           filter: `game_id=eq.${gameId}`,
         },
         (payload) => {
@@ -429,7 +429,7 @@ export function useGameSubscription(
         {
           event: 'DELETE',
           schema: 'public',
-          table: 'game_actions',
+          table: 'gambit_game_actions',
           filter: `game_id=eq.${gameId}`,
         },
         (payload) => {
