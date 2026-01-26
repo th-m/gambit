@@ -1,0 +1,14 @@
+# Supabase Database Setup - Progress Log
+
+## Codebase Patterns
+- Use Supabase MCP tools for database operations
+- Table names prefixed with `gambit_` to avoid conflicts
+- All tables need RLS enabled with appropriate policies
+- Real-time replication needed for game state tables
+
+---
+
+## 2026-01-25 - Task Initialization
+- Created task directory structure
+- Defined feature list with all database setup stories
+- Ready to begin database migrations

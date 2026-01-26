@@ -1,0 +1,338 @@
+{
+  "task_name": "supabase-database-setup",
+  "description": "Set up the complete Supabase database schema for the Gambit social deduction game",
+  "created": "2026-01-25",
+  "features": [
+    {
+      "id": "enum-game-status",
+      "category": "tables",
+      "priority": 1,
+      "description": "Create gambit_game_status enum",
+      "acceptance_criteria": [
+        "Enum created with values: 'lobby', 'playing', 'finished'",
+        "Can be used as column type in gambit_games table"
+      ],
+      "passes": false
+    },
+    {
+      "id": "enum-round-status",
+      "category": "tables",
+      "priority": 1,
+      "description": "Create gambit_round_status enum",
+      "acceptance_criteria": [
+        "Enum created with values: 'pending', 'team_selection', 'voting', 'in_progress', 'succeeded', 'failed'",
+        "Can be used for tracking round/phase state"
+      ],
+      "passes": false
+    },
+    {
+      "id": "enum-character-alignments",
+      "category": "tables",
+      "priority": 1,
+      "description": "Create gambit_character_alignments enum",
+      "acceptance_criteria": [
+        "Enum created with values: 'good', 'evil'",
+        "Can be used for team assignment"
+      ],
+      "passes": false
+    },
+    {
+      "id": "table-profiles",
+      "category": "tables",
+      "priority": 1,
+      "description": "Create profiles table linked to auth.users",
+      "acceptance_criteria": [
+        "Table created with columns: id (uuid, PK, references auth.users), email (text), display_name (text), created_at (timestamptz)",
+        "Trigger to auto-create profile on user signup",
+        "RLS enabled with policy for users to read/update own profile"
+      ],
+      "passes": false
+    },
+    {
+      "id": "table-gambit-games",
+      "category": "tables",
+      "priority": 1,
+      "description": "Create gambit_games table for game state",
+      "acceptance_criteria": [
+        "id: uuid PK with default gen_random_uuid()",
+        "game_key: varchar(8) UNIQUE NOT NULL for shareable join code",
+        "host_id: uuid NOT NULL references profiles(id)",
+        "status: gambit_game_status DEFAULT 'lobby'",
+        "phase: varchar(30) for current game phase",
+        "current_round: int DEFAULT 0",
+        "crown_index: int DEFAULT 0 for current leader",
+        "rejection_count: int DEFAULT 0",
+        "good_victories: int DEFAULT 0",
+        "evil_victories: int DEFAULT 0",
+        "selected_team: uuid[] for player IDs on current mission",
+        "winner: varchar(10) for 'good' or 'evil'",
+        "end_reason: varchar(100)",
+        "settings: jsonb DEFAULT '{}'",
+        "name: text for display name",
+        "created_at: timestamptz DEFAULT now()"
+      ],
+      "passes": false
+    },
+    {
+      "id": "table-gambit-players",
+      "category": "tables",
+      "priority": 1,
+      "description": "Create gambit_players table for game participants",
+      "acceptance_criteria": [
+        "id: uuid PK with default gen_random_uuid()",
+        "game_id: uuid NOT NULL references gambit_games(id) ON DELETE CASCADE",
+        "user_id: uuid NOT NULL references profiles(id)",
+        "display_name: varchar(100)",
+        "character: varchar(50) for assigned character name",
+        "team: varchar(10) for 'good' or 'evil'",
+        "is_alive: boolean DEFAULT true",
+        "seat_order: int for position in turn order",
+        "created_at: timestamptz DEFAULT now()",
+        "UNIQUE constraint on (game_id, user_id)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "table-gambit-game-actions",
+      "category": "tables",
+      "priority": 1,
+      "description": "Create gambit_game_actions table for audit log",
+      "acceptance_criteria": [
+        "id: uuid PK with default gen_random_uuid()",
+        "game_id: uuid NOT NULL references gambit_games(id) ON DELETE CASCADE",
+        "player_id: uuid references gambit_players(id)",
+        "action_type: varchar(50) NOT NULL (vote_yes, vote_no, assassinate, etc.)",
+        "target_ids: uuid[] for target player IDs",
+        "round: int for round when action occurred",
+        "phase: varchar(30) for phase when action occurred",
+        "metadata: jsonb DEFAULT '{}'",
+        "created_at: timestamptz DEFAULT now()"
+      ],
+      "passes": false
+    },
+    {
+      "id": "table-gambit-game-modifiers",
+      "category": "tables",
+      "priority": 1,
+      "description": "Create gambit_game_modifiers table for temporary game effects",
+      "acceptance_criteria": [
+        "id: uuid PK with default gen_random_uuid()",
+        "game_id: uuid NOT NULL references gambit_games(id) ON DELETE CASCADE",
+        "round: int NOT NULL for round this modifier applies to",
+        "modifier_type: varchar(50) NOT NULL (force_pass, extra_fail, etc.)",
+        "created_by: uuid references gambit_players(id)",
+        "metadata: jsonb DEFAULT '{}'",
+        "created_at: timestamptz DEFAULT now()"
+      ],
+      "passes": false
+    },
+    {
+      "id": "table-gambit-player-statuses",
+      "category": "tables",
+      "priority": 1,
+      "description": "Create gambit_player_statuses table for temporary player effects",
+      "acceptance_criteria": [
+        "id: uuid PK with default gen_random_uuid()",
+        "game_id: uuid NOT NULL references gambit_games(id) ON DELETE CASCADE",
+        "player_id: uuid NOT NULL references gambit_players(id) ON DELETE CASCADE",
+        "status_type: varchar(50) NOT NULL (protected, beepered, etc.)",
+        "created_by: uuid references gambit_players(id)",
+        "metadata: jsonb DEFAULT '{}'",
+        "expires_at_round: int for when status expires",
+        "created_at: timestamptz DEFAULT now()"
+      ],
+      "passes": false
+    },
+    {
+      "id": "table-gambit-game-logs",
+      "category": "tables",
+      "priority": 1,
+      "description": "Create gambit_game_logs table for debug/analytics",
+      "acceptance_criteria": [
+        "id: uuid PK with default gen_random_uuid()",
+        "game_id: uuid NOT NULL references gambit_games(id) ON DELETE CASCADE",
+        "action: varchar(100) NOT NULL for event name",
+        "phase: varchar(30)",
+        "round: int",
+        "duration_ms: int for processing time",
+        "metadata: jsonb DEFAULT '{}'",
+        "created_at: timestamptz DEFAULT now()"
+      ],
+      "passes": false
+    },
+    {
+      "id": "index-games-game-key",
+      "category": "indexes",
+      "priority": 2,
+      "description": "Create unique index on gambit_games.game_key",
+      "acceptance_criteria": [
+        "Unique index created on game_key column",
+        "Lookups by game_key are fast"
+      ],
+      "passes": false
+    },
+    {
+      "id": "index-players-composite",
+      "category": "indexes",
+      "priority": 2,
+      "description": "Create composite index on gambit_players(game_id, user_id)",
+      "acceptance_criteria": [
+        "Composite index created",
+        "Lookups by game_id and user_id are optimized"
+      ],
+      "passes": false
+    },
+    {
+      "id": "index-actions-composite",
+      "category": "indexes",
+      "priority": 2,
+      "description": "Create composite index on gambit_game_actions(game_id, round, phase)",
+      "acceptance_criteria": [
+        "Composite index created",
+        "Queries filtering by game, round, and phase are optimized"
+      ],
+      "passes": false
+    },
+    {
+      "id": "index-statuses-composite",
+      "category": "indexes",
+      "priority": 2,
+      "description": "Create composite index on gambit_player_statuses(game_id, player_id, status_type)",
+      "acceptance_criteria": [
+        "Composite index created",
+        "Lookups for player statuses are optimized"
+      ],
+      "passes": false
+    },
+    {
+      "id": "rls-profiles",
+      "category": "rls",
+      "priority": 3,
+      "description": "Enable RLS on profiles table",
+      "acceptance_criteria": [
+        "RLS enabled on profiles table",
+        "Users can read any profile (for display names)",
+        "Users can only update their own profile"
+      ],
+      "passes": false
+    },
+    {
+      "id": "rls-games",
+      "category": "rls",
+      "priority": 3,
+      "description": "Enable RLS on gambit_games table",
+      "acceptance_criteria": [
+        "RLS enabled on gambit_games table",
+        "Authenticated users can read games they are players in",
+        "Authenticated users can insert new games (become host)",
+        "Only host can update game state",
+        "Players in game can read game state"
+      ],
+      "passes": false
+    },
+    {
+      "id": "rls-players",
+      "category": "rls",
+      "priority": 3,
+      "description": "Enable RLS on gambit_players table",
+      "acceptance_criteria": [
+        "RLS enabled on gambit_players table",
+        "Players can read other players in same game",
+        "Users can insert themselves into games (join)",
+        "Users can only delete their own player record (leave)",
+        "Character and team visible only to own player or after game ends"
+      ],
+      "passes": false
+    },
+    {
+      "id": "rls-actions",
+      "category": "rls",
+      "priority": 3,
+      "description": "Enable RLS on gambit_game_actions table",
+      "acceptance_criteria": [
+        "RLS enabled on gambit_game_actions table",
+        "Players in game can read actions (for vote counts)",
+        "Players can only insert actions for themselves"
+      ],
+      "passes": false
+    },
+    {
+      "id": "rls-modifiers",
+      "category": "rls",
+      "priority": 3,
+      "description": "Enable RLS on gambit_game_modifiers table",
+      "acceptance_criteria": [
+        "RLS enabled on gambit_game_modifiers table",
+        "Players in game can read modifiers",
+        "Only server/host can insert modifiers"
+      ],
+      "passes": false
+    },
+    {
+      "id": "rls-statuses",
+      "category": "rls",
+      "priority": 3,
+      "description": "Enable RLS on gambit_player_statuses table",
+      "acceptance_criteria": [
+        "RLS enabled on gambit_player_statuses table",
+        "Players can read their own statuses",
+        "Status creators can read statuses they created"
+      ],
+      "passes": false
+    },
+    {
+      "id": "realtime-games",
+      "category": "realtime",
+      "priority": 4,
+      "description": "Enable real-time replication for gambit_games",
+      "acceptance_criteria": [
+        "Table added to supabase_realtime publication",
+        "Changes to gambit_games broadcast to subscribers"
+      ],
+      "passes": false
+    },
+    {
+      "id": "realtime-players",
+      "category": "realtime",
+      "priority": 4,
+      "description": "Enable real-time replication for gambit_players",
+      "acceptance_criteria": [
+        "Table added to supabase_realtime publication",
+        "Player joins/leaves broadcast to subscribers"
+      ],
+      "passes": false
+    },
+    {
+      "id": "realtime-actions",
+      "category": "realtime",
+      "priority": 4,
+      "description": "Enable real-time replication for gambit_game_actions",
+      "acceptance_criteria": [
+        "Table added to supabase_realtime publication",
+        "Vote submissions broadcast in real-time"
+      ],
+      "passes": false
+    },
+    {
+      "id": "realtime-statuses",
+      "category": "realtime",
+      "priority": 4,
+      "description": "Enable real-time replication for gambit_player_statuses",
+      "acceptance_criteria": [
+        "Table added to supabase_realtime publication",
+        "Status changes broadcast to relevant players"
+      ],
+      "passes": false
+    }
+  ],
+  "metadata": {
+    "total_features": 24,
+    "completed_features": 0,
+    "categories": {
+      "tables": 10,
+      "indexes": 4,
+      "rls": 6,
+      "realtime": 4
+    }
+  }
+}

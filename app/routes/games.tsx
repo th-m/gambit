@@ -1,3 +1,4 @@
+import React from "react";
 import { Outlet, redirect } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { createClient } from "~/lib/supabase/server";
