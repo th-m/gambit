@@ -1,0 +1,33 @@
+## Codebase Patterns
+
+- Supabase migrations go in `supabase/migrations/` with timestamp prefix format: `YYYYMMDDHHMMSS_description.sql`
+- All game-related tables use `gambit_` prefix for namespacing
+- Foreign keys to auth.users go through `profiles` table, not directly
+- Use PostgreSQL enums for constrained value sets (status, alignment)
+- App uses in-memory GameService for testing; actual Supabase types in `app/types/supabase.ts`
+- RLS policies should check both player membership AND host access where appropriate
+- Realtime only enabled for tables that need client subscriptions (games, players, actions, statuses)
+
+---
+## 2026-01-25 - All Database Stories (Complete Schema Implementation)
+
+- **What was implemented:**
+  - Complete Supabase database schema migration
+  - 3 PostgreSQL enums: gambit_game_status, gambit_round_status, gambit_character_alignments
+  - profiles table with auto-create trigger on auth.users insert
+  - 6 gambit_* tables: games, players, game_actions, game_modifiers, player_statuses, game_logs
+  - 4 composite indexes for query optimization
+  - RLS policies for all 7 tables (profiles + 6 gambit_* tables)
+  - Realtime publication for 4 tables
+
+- **Files changed:**
+  - `supabase/migrations/20260125000000_create_game_tables.sql` - Complete rewrite with correct naming and structure
+  - `supabase/migrations/20260125000001_enable_realtime.sql` - Updated table names
+
+- **Learnings:**
+  - Original migrations used wrong table names (games vs gambit_games)
+  - The `supabase.ts` types file reflects actual remote database, not local migrations
+  - Tests use in-memory mocks so migration changes don't break tests
+  - Validation (typecheck + tests) doesn't validate SQL syntax - only TypeScript
+  - Comprehensive migration updates are sometimes more practical than incremental changes
+  - PostgreSQL enums provide type safety at database level vs CHECK constraints
