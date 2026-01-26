@@ -6,21 +6,21 @@
 -- Enable Real-time Replication
 -- =============================================================================
 
--- Add games table to real-time publication
+-- Add gambit_games table to real-time publication
 -- This allows clients to subscribe to game state changes (status, phase, scores, etc.)
-ALTER PUBLICATION supabase_realtime ADD TABLE games;
+ALTER PUBLICATION supabase_realtime ADD TABLE gambit_games;
 
--- Add players table to real-time publication
+-- Add gambit_players table to real-time publication
 -- This allows clients to see when players join/leave and character assignments
-ALTER PUBLICATION supabase_realtime ADD TABLE players;
+ALTER PUBLICATION supabase_realtime ADD TABLE gambit_players;
 
--- Add game_actions table to real-time publication
+-- Add gambit_game_actions table to real-time publication
 -- This allows clients to see votes and actions in real-time
-ALTER PUBLICATION supabase_realtime ADD TABLE game_actions;
+ALTER PUBLICATION supabase_realtime ADD TABLE gambit_game_actions;
 
--- Add player_statuses table to real-time publication
+-- Add gambit_player_statuses table to real-time publication
 -- This allows clients to see status changes (protected, beepered, etc.)
-ALTER PUBLICATION supabase_realtime ADD TABLE player_statuses;
+ALTER PUBLICATION supabase_realtime ADD TABLE gambit_player_statuses;
 
 -- =============================================================================
 -- Verification
@@ -31,22 +31,22 @@ ALTER PUBLICATION supabase_realtime ADD TABLE player_statuses;
 --    SELECT tablename FROM pg_publication_tables WHERE pubname = 'supabase_realtime';
 --
 -- 2. Expected output should include:
---    - games
---    - players
---    - game_actions
---    - player_statuses
+--    - gambit_games
+--    - gambit_players
+--    - gambit_game_actions
+--    - gambit_player_statuses
 --
 -- 3. Testing in client code:
 --    const channel = supabase.channel('game-changes')
---      .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, handler)
+--      .on('postgres_changes', { event: '*', schema: 'public', table: 'gambit_games' }, handler)
 --      .subscribe();
 --
 -- =============================================================================
 -- Notes
 -- =============================================================================
--- - game_modifiers table is NOT included as modifiers are read-only for clients
+-- - gambit_game_modifiers table is NOT included as modifiers are read-only for clients
 --   and are applied server-side. They don't need real-time updates.
--- - game_logs table is NOT included as logs are for debugging/analytics only
+-- - gambit_game_logs table is NOT included as logs are for debugging/analytics only
 --   and don't need real-time updates to clients.
 -- - Real-time subscriptions still respect RLS policies - clients will only
 --   receive events for rows they have permission to SELECT.
